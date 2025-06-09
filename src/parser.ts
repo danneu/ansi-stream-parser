@@ -36,15 +36,18 @@ export type Color =
   | { type: "256"; code: number }
   | { type: "rgb"; rgb: [r: number, g: number, b: number] };
 
-export type Decoration =
-  | "bold"
-  | "dim"
-  | "italic"
-  | "underline"
-  | "blink"
-  | "reverse"
-  | "hidden"
-  | "strikethrough";
+export const Decoration = {
+  bold: "bold",
+  dim: "dim",
+  italic: "italic",
+  underline: "underline",
+  blink: "blink",
+  reverse: "reverse",
+  hidden: "hidden",
+  strikethrough: "strikethrough",
+} as const;
+
+export type Decoration = (typeof Decoration)[keyof typeof Decoration];
 
 export type StyledText = {
   text: string;

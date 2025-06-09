@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import { strict as assert } from "node:assert";
-import { Color16, createParser } from "../src/index.js";
+import { Color16, createParser, Decoration } from "../src/index.js";
 
 describe("ANSI Parser", () => {
   test("should parse plain text", () => {
@@ -41,7 +41,7 @@ describe("ANSI Parser", () => {
     assert.deepEqual(chunks, [
       {
         text: "bold",
-        decorations: ["bold"],
+        decorations: [Decoration.bold],
       },
     ]);
   });
@@ -53,7 +53,7 @@ describe("ANSI Parser", () => {
     assert.deepEqual(chunks, [
       {
         text: "bold underlined",
-        decorations: ["bold", "underline"],
+        decorations: [Decoration.bold, Decoration.underline],
       },
     ]);
   });
@@ -67,7 +67,7 @@ describe("ANSI Parser", () => {
         text: "bold red on red",
         fg: { type: "16", code: Color16.red },
         bg: { type: "16", code: Color16.red },
-        decorations: ["bold"],
+        decorations: [Decoration.bold],
       },
     ]);
   });
@@ -159,11 +159,11 @@ describe("ANSI Parser", () => {
     assert.deepEqual(chunks, [
       {
         text: "bold underlined",
-        decorations: ["bold", "underline"],
+        decorations: [Decoration.bold, Decoration.underline],
       },
       {
         text: " no bold",
-        decorations: ["underline"],
+        decorations: [Decoration.underline],
       },
       { text: " no underline" },
     ]);
@@ -176,7 +176,7 @@ describe("ANSI Parser", () => {
     assert.deepEqual(chunks, [
       {
         text: "bold dim",
-        decorations: ["bold", "dim"],
+        decorations: [Decoration.bold, Decoration.dim],
       },
       { text: " neither" },
     ]);
@@ -250,14 +250,14 @@ describe("ANSI Parser", () => {
       {
         text: "all decorations",
         decorations: [
-          "bold",
-          "dim",
-          "italic",
-          "underline",
-          "blink",
-          "reverse",
-          "hidden",
-          "strikethrough",
+          Decoration.bold,
+          Decoration.dim,
+          Decoration.italic,
+          Decoration.underline,
+          Decoration.blink,
+          Decoration.reverse,
+          Decoration.hidden,
+          Decoration.strikethrough,
         ],
       },
     ]);
