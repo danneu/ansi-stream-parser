@@ -1,6 +1,3 @@
-// TODO: Replace all tokenizer strings with enums.
-// Since they don't need to be end-user friendly.
-
 export type RawColor =
   | { type: "16"; code: number }
   | { type: "256"; code: number | null } // null = missing color number
@@ -293,7 +290,7 @@ export function createTokenizer(): Tokenizer {
         }
 
         const nextCharCode = fullInput.charCodeAt(i + 1);
-        
+
         if (nextCharCode === CHAR_CODES.LEFT_BRACKET) {
           // Save any accumulated text
           if (textChunks.length > 0) {
@@ -309,7 +306,7 @@ export function createTokenizer(): Tokenizer {
             if (isTerminatorCode(terminatorCode)) {
               // Found terminator
               const params = fullInput.slice(i + 2, j);
-              
+
               if (terminatorCode === CHAR_CODES.LOWER_M) {
                 tokens.push(...handleSGR(params));
               } else {
@@ -317,14 +314,14 @@ export function createTokenizer(): Tokenizer {
                 const sequence = fullInput.slice(i, j + 1);
                 tokens.push({ type: "unknown", sequence });
               }
-              
+
               i = j + 1;
               foundTerminator = true;
               break;
             }
             j++;
           }
-          
+
           if (!foundTerminator) {
             // Incomplete sequence, buffer it
             buffer = fullInput.slice(i);
@@ -334,7 +331,10 @@ export function createTokenizer(): Tokenizer {
           // Not an escape sequence, treat as regular text
           // Grab span of plain text instead of character by character
           const textStart = i;
-          while (i < fullInput.length && fullInput.charCodeAt(i) !== CHAR_CODES.ESC) {
+          while (
+            i < fullInput.length &&
+            fullInput.charCodeAt(i) !== CHAR_CODES.ESC
+          ) {
             i++;
           }
           textChunks.push(fullInput.slice(textStart, i));
@@ -342,7 +342,10 @@ export function createTokenizer(): Tokenizer {
       } else {
         // Grab span of plain text instead of character by character
         const textStart = i;
-        while (i < fullInput.length && fullInput.charCodeAt(i) !== CHAR_CODES.ESC) {
+        while (
+          i < fullInput.length &&
+          fullInput.charCodeAt(i) !== CHAR_CODES.ESC
+        ) {
           i++;
         }
         if (i > textStart) {

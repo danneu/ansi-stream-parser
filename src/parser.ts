@@ -2,10 +2,11 @@ import { createTokenizer, type RawColor } from "./tokenizer";
 
 // Parser parses chunks of text and emits styled text
 
-export type Color =
-  | { type: "16"; code: number }
-  | { type: "256"; code: number }
-  | { type: "rgb"; rgb: [number, number, number] };
+export type Color16 = { type: "16"; code: number };
+export type Color256 = { type: "256"; code: number };
+export type ColorRgb = { type: "rgb"; rgb: [number, number, number] };
+
+export type Color = Color16 | Color256 | ColorRgb;
 
 export type Decoration =
   | "bold"
@@ -29,13 +30,13 @@ export type Parser = {
   reset(): void;
 };
 
-type Style = {
+type CurrentStyle = {
   fg: Color | null;
   bg: Color | null;
   decorations: Set<Decoration>;
 };
 
-function createStyle(): Style {
+function createStyle(): CurrentStyle {
   return {
     fg: null,
     bg: null,
@@ -43,7 +44,7 @@ function createStyle(): Style {
   };
 }
 
-function styleToStyledText(text: string, style: Style): StyledText {
+function styleToStyledText(text: string, style: CurrentStyle): StyledText {
   const result: StyledText = { text };
 
   if (style.fg) {
@@ -70,20 +71,26 @@ export function createParser(): Parser {
   function validateColor(color: RawColor): Color | null {
     switch (color.type) {
       case "16":
-        // 16-color is always valid
+        // 16-color is always valid 0-15
         return { type: "16", code: color.code };
       case "256": {
+        // 256-color might be invalid
         if (color.code === null || color.code < 0 || color.code > 255) {
           return null;
         }
         return { type: "256", code: color.code };
       }
-      case "rgb":
-        // TODO: Validate RGB values
+      case "rgb": {
+        // RGB might be invalid
         if (color.rgb === null) {
           return null;
         }
+        const [r, g, b] = color.rgb;
+        if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) {
+          return null;
+        }
         return { type: "rgb", rgb: color.rgb };
+      }
       default: {
         const exhaustive: never = color;
         throw new Error(`Unhandled color: ${JSON.stringify(exhaustive)}`);
