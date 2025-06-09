@@ -32,6 +32,77 @@ export type Token =
   // other
   | { type: "unknown"; sequence: string };
 
+// Define handler types
+type TokenHandler = (code: number) => Token | Token[];
+
+function createSGRLookup(): Record<number, TokenHandler> {
+  const lookup: Record<number, TokenHandler> = {
+    // Resets
+    0: () => ({ type: "reset-all" }),
+
+    // Text attributes
+    1: () => ({ type: "bold" }),
+    2: () => ({ type: "dim" }),
+    3: () => ({ type: "italic" }),
+    4: () => ({ type: "underline" }),
+    5: () => ({ type: "blink" }),
+    7: () => ({ type: "reverse" }),
+    8: () => ({ type: "hidden" }),
+    9: () => ({ type: "strikethrough" }),
+
+    // Remove text attributes
+    21: () => ({ type: "no-bold" }),
+    22: () => [{ type: "no-bold" }, { type: "no-dim" }], // Returns array
+    23: () => ({ type: "no-italic" }),
+    24: () => ({ type: "no-underline" }),
+    25: () => ({ type: "no-blink" }),
+    27: () => ({ type: "no-reverse" }),
+    28: () => ({ type: "no-hidden" }),
+    29: () => ({ type: "no-strikethrough" }),
+
+    // Color resets
+    39: () => ({ type: "reset-fg-color" }),
+    49: () => ({ type: "reset-bg-color" }),
+  };
+
+  // Add range handlers using a loop
+  // 16-color foreground (30-37)
+  for (let i = 30; i <= 37; i++) {
+    lookup[i] = (code) => ({
+      type: "set-fg-color",
+      color: { type: "16", code: code - 30 },
+    });
+  }
+
+  // 16-color background (40-47)
+  for (let i = 40; i <= 47; i++) {
+    lookup[i] = (code) => ({
+      type: "set-bg-color",
+      color: { type: "16", code: code - 40 },
+    });
+  }
+
+  // Bright 16-color foreground (90-97)
+  for (let i = 90; i <= 97; i++) {
+    lookup[i] = (code) => ({
+      type: "set-fg-color",
+      color: { type: "16", code: code - 90 + 8 },
+    });
+  }
+
+  // Bright 16-color background (100-107)
+  for (let i = 100; i <= 107; i++) {
+    lookup[i] = (code) => ({
+      type: "set-bg-color",
+      color: { type: "16", code: code - 100 + 8 },
+    });
+  }
+
+  return lookup;
+}
+
+const SGR_LOOKUP = createSGRLookup();
+
 export type Tokenizer = {
   push(input: string): Token[];
   reset(): void;
@@ -159,138 +230,17 @@ export function createTokenizer(): Tokenizer {
         return;
       }
 
-      switch (code) {
-        case 0:
-          tokens.push({ type: "reset-all" });
-          break;
-
-        case 1:
-          tokens.push({ type: "bold" });
-          break;
-        case 2:
-          tokens.push({ type: "dim" });
-          break;
-        case 3:
-          tokens.push({ type: "italic" });
-          break;
-        case 4:
-          tokens.push({ type: "underline" });
-          break;
-        case 5:
-          tokens.push({ type: "blink" });
-          break;
-        case 7:
-          tokens.push({ type: "reverse" });
-          break;
-        case 8:
-          tokens.push({ type: "hidden" });
-          break;
-        case 9:
-          tokens.push({ type: "strikethrough" });
-          break;
-
-        case 21:
-          tokens.push({ type: "no-bold" });
-          break;
-        case 22:
-          tokens.push({ type: "no-bold" });
-          tokens.push({ type: "no-dim" });
-          break;
-        case 23:
-          tokens.push({ type: "no-italic" });
-          break;
-        case 24:
-          tokens.push({ type: "no-underline" });
-          break;
-        case 25:
-          tokens.push({ type: "no-blink" });
-          break;
-        case 27:
-          tokens.push({ type: "no-reverse" });
-          break;
-        case 28:
-          tokens.push({ type: "no-hidden" });
-          break;
-        case 29:
-          tokens.push({ type: "no-strikethrough" });
-          break;
-
-        case 30:
-        case 31:
-        case 32:
-        case 33:
-        case 34:
-        case 35:
-        case 36:
-        case 37:
-          // 16-color foreground
-          tokens.push({
-            type: "set-fg-color",
-            color: { type: "16", code: code - 30 },
-          });
-          break;
-
-        case 38: // Extended foreground color (256 or RGB)
-          // handled above
-          break;
-
-        case 39:
-          tokens.push({ type: "reset-fg-color" });
-          break;
-
-        case 40:
-        case 41:
-        case 42:
-        case 43:
-        case 44:
-        case 45:
-        case 46:
-        case 47:
-          // 16-color background
-          tokens.push({
-            type: "set-bg-color",
-            color: { type: "16", code: code - 40 },
-          });
-          break;
-
-        case 48: // Extended background color (256 or RGB)
-          // handled above
-          break;
-
-        case 49:
-          tokens.push({ type: "reset-bg-color" });
-          break;
-
-        case 90:
-        case 91:
-        case 92:
-        case 93:
-        case 94:
-        case 95:
-        case 96:
-        case 97:
-          // Bright 16-color foreground
-          tokens.push({
-            type: "set-fg-color",
-            color: { type: "16", code: code - 90 + 8 },
-          });
-          break;
-
-        case 100:
-        case 101:
-        case 102:
-        case 103:
-        case 104:
-        case 105:
-        case 106:
-        case 107:
-          // Bright 16-color background
-          tokens.push({
-            type: "set-bg-color",
-            color: { type: "16", code: code - 100 + 8 },
-          });
-          break;
+      const handler = SGR_LOOKUP[code];
+      if (handler) {
+        const result = handler(code);
+        if (Array.isArray(result)) {
+          tokens.push(...result);
+        } else {
+          tokens.push(result);
+        }
       }
+
+      // If no handler found, code is ignored (unknown SGR codes are typically ignored)
     }
   };
 
