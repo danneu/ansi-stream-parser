@@ -249,7 +249,8 @@ export function createTokenizer(): Tokenizer {
     const fullInput = buffer + input;
     buffer = "";
 
-    let currentText = "";
+    // Use array for text accumulation instead of string concatenation
+    const textChunks: string[] = [];
     let i = 0;
 
     while (i < fullInput.length) {
@@ -257,9 +258,9 @@ export function createTokenizer(): Tokenizer {
         // Check if we have enough characters for a complete escape sequence start
         if (i + 1 >= fullInput.length) {
           // Incomplete escape sequence, buffer it
-          if (currentText) {
-            tokens.push({ type: "text", text: currentText });
-            currentText = "";
+          if (textChunks.length > 0) {
+            tokens.push({ type: "text", text: textChunks.join("") });
+            textChunks.length = 0; // Clear array
           }
           buffer = fullInput.slice(i);
           break;
@@ -267,9 +268,9 @@ export function createTokenizer(): Tokenizer {
 
         if (fullInput[i + 1] === "[") {
           // Save any accumulated text
-          if (currentText) {
-            tokens.push({ type: "text", text: currentText });
-            currentText = "";
+          if (textChunks.length > 0) {
+            tokens.push({ type: "text", text: textChunks.join("") });
+            textChunks.length = 0; // Clear array
           }
 
           // Find the end of the escape sequence
@@ -300,18 +301,28 @@ export function createTokenizer(): Tokenizer {
           i = j + 1;
         } else {
           // Not an escape sequence, treat as regular text
-          currentText += fullInput[i];
-          i++;
+          // Grab span of plain text instead of character by character
+          const textStart = i;
+          while (i < fullInput.length && fullInput[i] !== "\x1b") {
+            i++;
+          }
+          textChunks.push(fullInput.slice(textStart, i));
         }
       } else {
-        currentText += fullInput[i];
-        i++;
+        // Grab span of plain text instead of character by character
+        const textStart = i;
+        while (i < fullInput.length && fullInput[i] !== "\x1b") {
+          i++;
+        }
+        if (i > textStart) {
+          textChunks.push(fullInput.slice(textStart, i));
+        }
       }
     }
 
     // Handle any remaining text
-    if (currentText) {
-      tokens.push({ type: "text", text: currentText });
+    if (textChunks.length > 0) {
+      tokens.push({ type: "text", text: textChunks.join("") });
     }
 
     return tokens;
