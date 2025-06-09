@@ -53,19 +53,111 @@ export function createTokenizer(): Tokenizer {
       return tokens;
     }
 
-    const codes = params.split(";").map((p) => {
-      const parsed = parseInt(p, 10);
-      return isNaN(parsed) ? null : parsed;
-    });
+    // Parse parameters
+    let start = 0;
+    let i = 0;
 
-    // Keep track of original parameter segments for reconstruction
-    const paramSegments = params.split(";");
+    // Process each parameter
+    while (i <= params.length) {
+      // Found separator or end of string
+      if (i === params.length || params[i] === ";") {
+        const segment = params.slice(start, i);
+        const code = segment === "" ? null : parseInt(segment, 10);
 
-    for (let i = 0; i < codes.length; i++) {
-      const code = codes[i];
+        if (code !== null && !isNaN(code)) {
+          // Process the code based on its value
+          processCode(code, params, start, i, tokens);
+        }
 
-      // Skip null codes (empty parameters)
-      if (code === null) continue;
+        start = i + 1;
+      }
+      i++;
+    }
+
+    return tokens;
+
+    function processCode(
+      code: number,
+      params: string,
+      segmentStart: number,
+      segmentEnd: number,
+      tokens: Token[]
+    ) {
+      // For codes that need to look ahead (38, 48), we need special handling
+      if (code === 38 || code === 48) {
+        // Parse the next parameters manually
+        let pos = segmentEnd + 1; // Skip the semicolon
+
+        // Get next parameter (mode: 2 or 5)
+        const modeStart = pos;
+        while (pos < params.length && params[pos] !== ";") pos++;
+        const modeStr = params.slice(modeStart, pos);
+        const mode = modeStr === "" ? null : parseInt(modeStr, 10);
+
+        if (mode === 5) {
+          // 256-color mode
+          pos++; // Skip semicolon
+          const colorStart = pos;
+          while (pos < params.length && params[pos] !== ";") pos++;
+          const colorStr = params.slice(colorStart, pos);
+          const colorCode = colorStr === "" ? null : parseInt(colorStr, 10);
+
+          tokens.push({
+            type: code === 38 ? "set-fg-color" : "set-bg-color",
+            color: { type: "256", code: isNaN(colorCode!) ? null : colorCode },
+          });
+
+          // Skip the processed parameters
+          i = pos - 1; // -1 because the outer loop will increment
+          start = pos + 1;
+        } else if (mode === 2) {
+          // RGB mode - need exactly 3 more values
+          const rgbValues: (number | null)[] = [];
+
+          for (let j = 0; j < 3; j++) {
+            pos++; // Skip semicolon
+            const valueStart = pos;
+            while (pos < params.length && params[pos] !== ";") pos++;
+            const valueStr = params.slice(valueStart, pos);
+            const value = valueStr === "" ? null : parseInt(valueStr, 10);
+            rgbValues.push(value);
+          }
+
+          // Check if all RGB values are valid
+          if (rgbValues.every((v) => v !== null && !isNaN(v))) {
+            tokens.push({
+              type: code === 38 ? "set-fg-color" : "set-bg-color",
+              color: {
+                type: "rgb",
+                rgb: rgbValues as [number, number, number],
+              },
+            });
+            i = pos - 1;
+            start = pos + 1;
+          } else {
+            // Invalid RGB - emit as unknown
+            const endPos = Math.min(segmentStart + 20, params.length); // Reasonable limit
+            tokens.push({
+              type: "unknown",
+              sequence: `\x1b[${params.slice(segmentStart, endPos)}m`,
+            });
+            i = endPos - 1;
+            start = endPos + 1;
+          }
+        } else {
+          // Invalid mode or missing mode
+          const endPos =
+            modeStart > segmentEnd ? modeStart + modeStr.length : segmentEnd;
+          tokens.push({
+            type: "unknown",
+            sequence: `\x1b[${params.slice(segmentStart, endPos)}m`,
+          });
+          i = endPos - 1;
+          start = endPos + 1;
+        }
+
+        return;
+      }
 
       switch (code) {
         case 0:
@@ -138,74 +230,8 @@ export function createTokenizer(): Tokenizer {
           });
           break;
 
-        case 38:
-          // Extended foreground color (256 or RGB)
-          if (codes[i + 1] === 5) {
-            if (i + 2 < codes.length) {
-              // 256-color mode with color code
-              const colorCode = codes[i + 2] ?? null;
-              tokens.push({
-                type: "set-fg-color",
-                color: { type: "256", code: colorCode },
-              });
-              i += 2;
-            } else {
-              // Missing color code: \x1b[38;5m
-              tokens.push({
-                type: "set-fg-color",
-                color: { type: "256", code: null },
-              });
-              i += 1;
-            }
-          } else if (codes[i + 1] === 2) {
-            // RGB mode - requires exactly 3 more parameters
-            if (
-              i + 4 < codes.length &&
-              codes[i + 2] !== null &&
-              codes[i + 3] !== null &&
-              codes[i + 4] !== null
-            ) {
-              // Valid RGB sequence
-              const r = codes[i + 2]!;
-              const g = codes[i + 3]!;
-              const b = codes[i + 4]!;
-              tokens.push({
-                type: "set-fg-color",
-                color: { type: "rgb", rgb: [r, g, b] },
-              });
-              i += 4;
-            } else {
-              // Invalid RGB - reconstruct the original sequence
-              const startIdx = i;
-              let endIdx = i + 1; // At least include 38
-
-              // Find how many parameters belong to this RGB attempt
-              if (codes[i + 1] === 2) {
-                endIdx = Math.min(i + 5, codes.length); // Could be 38;2;r;g;b
-              }
-
-              // Reconstruct the original parameter string
-              const originalParams = paramSegments
-                .slice(startIdx, endIdx)
-                .join(";");
-              tokens.push({
-                type: "unknown",
-                sequence: `\x1b[${originalParams}m`,
-              });
-              i = endIdx - 1;
-            }
-          } else if (codes[i + 1] === null || i + 1 >= codes.length) {
-            // Just 38 with no subparameter: \x1b[38m
-            tokens.push({ type: "unknown", sequence: "\x1b[38m" });
-          } else {
-            // Invalid subparameter (not 2 or 5): \x1b[38;99m
-            const originalParams = paramSegments.slice(i, i + 2).join(";");
-            tokens.push({
-              type: "unknown",
-              sequence: `\x1b[${originalParams}m`,
-            });
-            i += 1;
-          }
+        case 38: // Extended foreground color (256 or RGB)
+          // handled above
           break;
 
         case 39:
@@ -227,69 +253,8 @@ export function createTokenizer(): Tokenizer {
           });
           break;
 
-        case 48:
-          // Extended background color (256 or RGB)
-          if (codes[i + 1] === 5) {
-            if (i + 2 < codes.length) {
-              const colorCode = codes[i + 2] ?? null;
-              tokens.push({
-                type: "set-bg-color",
-                color: { type: "256", code: colorCode },
-              });
-              i += 2;
-            } else {
-              tokens.push({
-                type: "set-bg-color",
-                color: { type: "256", code: null },
-              });
-              i += 1;
-            }
-          } else if (codes[i + 1] === 2) {
-            if (
-              i + 4 < codes.length &&
-              codes[i + 2] !== null &&
-              codes[i + 3] !== null &&
-              codes[i + 4] !== null
-            ) {
-              const r = codes[i + 2]!;
-              const g = codes[i + 3]!;
-              const b = codes[i + 4]!;
-              tokens.push({
-                type: "set-bg-color",
-                color: { type: "rgb", rgb: [r, g, b] },
-              });
-              i += 4;
-            } else {
-              // Invalid RGB - reconstruct the original sequence
-              const startIdx = i;
-              let endIdx = i + 1; // At least include 48
-
-              // Find how many parameters belong to this RGB attempt
-              if (codes[i + 1] === 2) {
-                endIdx = Math.min(i + 5, codes.length); // Could be 48;2;r;g;b
-              }
-
-              // Reconstruct the original parameter string
-              const originalParams = paramSegments
-                .slice(startIdx, endIdx)
-                .join(";");
-              tokens.push({
-                type: "unknown",
-                sequence: `\x1b[${originalParams}m`,
-              });
-              i = endIdx - 1;
-            }
-          } else if (codes[i + 1] === null || i + 1 >= codes.length) {
-            tokens.push({ type: "unknown", sequence: "\x1b[48m" });
-          } else {
-            // Invalid subparameter (not 2 or 5): \x1b[48;99m
-            const originalParams = paramSegments.slice(i, i + 2).join(";");
-            tokens.push({
-              type: "unknown",
-              sequence: `\x1b[${originalParams}m`,
-            });
-            i += 1;
-          }
+        case 48: // Extended background color (256 or RGB)
+          // handled above
           break;
 
         case 49:
@@ -327,8 +292,6 @@ export function createTokenizer(): Tokenizer {
           break;
       }
     }
-
-    return tokens;
   };
 
   const push = (input: string): Token[] => {
