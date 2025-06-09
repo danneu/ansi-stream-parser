@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import { strict as assert } from "node:assert";
-import { Color16, createParser } from "../src/parser.js";
+import { Color16, createParser } from "../src/index.js";
 
 describe("ANSI Parser", () => {
   test("should parse plain text", () => {

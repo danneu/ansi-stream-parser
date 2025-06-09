@@ -1,7 +1,6 @@
 import { test, describe } from "node:test";
 import { strict as assert } from "node:assert";
-import { createTokenizer } from "../src/tokenizer.js";
-import { createParser } from "../src/parser.js";
+import { createTokenizer, createParser } from "../src/index.js";
 
 describe("Invalid RGB Values", () => {
   test("should handle negative red value", () => {

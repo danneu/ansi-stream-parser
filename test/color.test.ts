@@ -1,34 +1,30 @@
 import { test, describe } from "node:test";
 import { strict as assert } from "node:assert";
-import {
-  getColorName,
-  getColorHexCode,
-  colorNames,
-  type Palette16,
-} from "../src/color.js";
+import { getColor16Name, getColorHexCode } from "../src/index.js";
+import { type Palette16 } from "../src/color.js";
 
 describe("Color helpers", () => {
-  describe("getColorName", () => {
+  describe("getColor16Name", () => {
     test("should return correct color names for standard colors", () => {
-      assert.equal(getColorName({ type: "16", code: 0 }), "black");
-      assert.equal(getColorName({ type: "16", code: 1 }), "red");
-      assert.equal(getColorName({ type: "16", code: 2 }), "green");
-      assert.equal(getColorName({ type: "16", code: 3 }), "yellow");
-      assert.equal(getColorName({ type: "16", code: 4 }), "blue");
-      assert.equal(getColorName({ type: "16", code: 5 }), "magenta");
-      assert.equal(getColorName({ type: "16", code: 6 }), "cyan");
-      assert.equal(getColorName({ type: "16", code: 7 }), "white");
+      assert.equal(getColor16Name(0), "black");
+      assert.equal(getColor16Name(1), "red");
+      assert.equal(getColor16Name(2), "green");
+      assert.equal(getColor16Name(3), "yellow");
+      assert.equal(getColor16Name(4), "blue");
+      assert.equal(getColor16Name(5), "magenta");
+      assert.equal(getColor16Name(6), "cyan");
+      assert.equal(getColor16Name(7), "white");
     });
 
     test("should return correct color names for bright colors", () => {
-      assert.equal(getColorName({ type: "16", code: 8 }), "bright-black");
-      assert.equal(getColorName({ type: "16", code: 9 }), "bright-red");
-      assert.equal(getColorName({ type: "16", code: 10 }), "bright-green");
-      assert.equal(getColorName({ type: "16", code: 11 }), "bright-yellow");
-      assert.equal(getColorName({ type: "16", code: 12 }), "bright-blue");
-      assert.equal(getColorName({ type: "16", code: 13 }), "bright-magenta");
-      assert.equal(getColorName({ type: "16", code: 14 }), "bright-cyan");
-      assert.equal(getColorName({ type: "16", code: 15 }), "bright-white");
+      assert.equal(getColor16Name(8), "bright-black");
+      assert.equal(getColor16Name(9), "bright-red");
+      assert.equal(getColor16Name(10), "bright-green");
+      assert.equal(getColor16Name(11), "bright-yellow");
+      assert.equal(getColor16Name(12), "bright-blue");
+      assert.equal(getColor16Name(13), "bright-magenta");
+      assert.equal(getColor16Name(14), "bright-cyan");
+      assert.equal(getColor16Name(15), "bright-white");
     });
   });
 
@@ -146,30 +142,6 @@ describe("Color helpers", () => {
         getColorHexCode({ type: "rgb", rgb: [170, 0, 0] }, customPalette),
         "#aa0000"
       );
-    });
-  });
-
-  describe("colorNames", () => {
-    test("should export all 16 color names", () => {
-      assert.equal(colorNames.length, 16);
-      assert.deepEqual(colorNames, [
-        "black",
-        "red",
-        "green",
-        "yellow",
-        "blue",
-        "magenta",
-        "cyan",
-        "white",
-        "bright-black",
-        "bright-red",
-        "bright-green",
-        "bright-yellow",
-        "bright-blue",
-        "bright-magenta",
-        "bright-cyan",
-        "bright-white",
-      ]);
     });
   });
 });

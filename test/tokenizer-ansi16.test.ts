@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import { strict as assert } from "node:assert";
-import { createTokenizer } from "../src/tokenizer.js";
+import { createTokenizer } from "../src/index.js";
 
 describe("ANSI 16 Colors", () => {
   test("should handle all 8 normal foreground colors", () => {

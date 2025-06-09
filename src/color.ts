@@ -1,9 +1,9 @@
-import type { Color } from "./parser";
+import type { Color, Color16 } from "./parser";
 
 // Color helpers useful for the user consuming the output of the parser
 // like when converting StyledText to HTML
 
-export const colorNames = [
+const colorNames = [
   "black",
   "red",
   "green",
@@ -24,8 +24,8 @@ export const colorNames = [
 
 type ColorName = (typeof colorNames)[number];
 
-export function getColorName(color: Extract<Color, { type: "16" }>): ColorName {
-  return colorNames[color.code]!;
+export function getColor16Name(code: Color16): ColorName {
+  return colorNames[code]!;
 }
 
 type RGB = [r: number, g: number, b: number];

@@ -1,7 +1,6 @@
 import { test, describe } from "node:test";
 import { strict as assert } from "node:assert";
-import { createTokenizer } from "../src/tokenizer.js";
-import type { Token } from "../src/tokenizer.js";
+import { createTokenizer, type Token } from "../src/index.js";
 
 describe("ANSI 256 Colors", () => {
   test("should handle basic 256 foreground colors", () => {

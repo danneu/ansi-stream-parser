@@ -87,12 +87,7 @@ The library provides color utilities for working with the parsed color values.
 This is useful for when you're mapping `StyledText` parser output to HTML or other formats.
 
 ```typescript
-import {
-  getColorName,
-  getColorHexCode,
-  colorNames,
-  Color16,
-} from "ansi-stream-parser/color";
+import { getColor16Name, getColorHexCode, Color16 } from "ansi-stream-parser";
 
 // Get color name for 16-color codes
 const colorName = getColorName({ type: "16", code: 1 }); // "red"
@@ -112,9 +107,4 @@ const customPalette = [
 ] as const;
 
 const customHex = getColorHexCode({ type: "16", code: 1 }, customPalette); // "#ff0000"
-
-// Access all color names
-console.log(colorNames); // ["black", "red", "green", ...]
 ```
-
-These helpers are useful when converting parsed ANSI text to HTML, CSS, or other formats.
