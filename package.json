@@ -1,7 +1,28 @@
 {
   "name": "ansi-stream-parser",
   "version": "0.0.1",
-  "description": "",
+  "description": "A parser for ANSI escape sequence text (SGR) that works on streaming/partial input",
+  "keywords": [
+    "ansi",
+    "escape",
+    "color",
+    "terminal",
+    "parser",
+    "streaming",
+    "sgr",
+    "256-color",
+    "rgb"
+  ],
+  "author": "danneu",
+  "homepage": "https://github.com/danneu/ansi-stream-parser",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danneu/ansi-stream-parser.git"
+  },
+  "bugs": {
+    "url": "https://github.com/danneu/ansi-stream-parser/issues"
+  },
+  "sideEffects": false,
   "type": "module",
   "main": "./src/index.ts",
   "module": "./src/index.ts",
