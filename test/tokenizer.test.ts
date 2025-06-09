@@ -494,4 +494,82 @@ describe("ANSI Stream Tokenizer", () => {
       { type: "text", text: "text" },
     ]);
   });
+
+  test("should not buffer complete escape sequences", () => {
+    const tokenizer = createTokenizer();
+
+    // This would have caught the bug where we incorrectly buffered complete sequences
+    // The bug would manifest as missing tokens on the first push
+    let tokens = tokenizer.push("\x1b[31mred\x1b[0m more text");
+    assert.deepEqual(tokens, [
+      { type: "set-fg-color", color: { type: "16", code: 1 } },
+      { type: "text", text: "red" },
+      { type: "reset-all" },
+      { type: "text", text: " more text" },
+    ]);
+
+    // Ensure nothing was buffered - next push should work independently
+    tokens = tokenizer.push("plain text");
+    assert.deepEqual(tokens, [
+      { type: "text", text: "plain text" },
+    ]);
+
+    // Test with unknown sequences too
+    tokens = tokenizer.push("\x1b[2Jclear\x1b[Hcursor");
+    assert.deepEqual(tokens, [
+      { type: "unknown", sequence: "\x1b[2J" },
+      { type: "text", text: "clear" },
+      { type: "unknown", sequence: "\x1b[H" },
+      { type: "text", text: "cursor" },
+    ]);
+
+    // Ensure no buffering happened
+    tokens = tokenizer.push("more");
+    assert.deepEqual(tokens, [
+      { type: "text", text: "more" },
+    ]);
+  });
+
+  test("should only buffer truly incomplete sequences", () => {
+    const tokenizer = createTokenizer();
+
+    // Incomplete at end - should buffer
+    let tokens = tokenizer.push("text\x1b[31");
+    assert.deepEqual(tokens, [
+      { type: "text", text: "text" },
+    ]);
+
+    // Complete the sequence
+    tokens = tokenizer.push("mred");
+    assert.deepEqual(tokens, [
+      { type: "set-fg-color", color: { type: "16", code: 1 } },
+      { type: "text", text: "red" },
+    ]);
+
+    // Incomplete escape at very end
+    tokens = tokenizer.push("hello\x1b");
+    assert.deepEqual(tokens, [
+      { type: "text", text: "hello" },
+    ]);
+
+    // Complete it
+    tokens = tokenizer.push("[32mgreen");
+    assert.deepEqual(tokens, [
+      { type: "set-fg-color", color: { type: "16", code: 2 } },
+      { type: "text", text: "green" },
+    ]);
+
+    // Incomplete CSI sequence
+    tokens = tokenizer.push("text\x1b[");
+    assert.deepEqual(tokens, [
+      { type: "text", text: "text" },
+    ]);
+
+    // Complete with unknown sequence
+    tokens = tokenizer.push("10;20Hmore");
+    assert.deepEqual(tokens, [
+      { type: "unknown", sequence: "\x1b[10;20H" },
+      { type: "text", text: "more" },
+    ]);
+  });
 });

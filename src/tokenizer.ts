@@ -103,17 +103,26 @@ function createSGRLookup(): Record<number, TokenHandler> {
 
 const SGR_LOOKUP = createSGRLookup();
 
+const CHAR_CODES = {
+  ESC: 0x1b, // 27  - Escape character
+  LEFT_BRACKET: 0x5b, // 91  - '['
+  SEMICOLON: 0x3b, // 59  - ';'
+  AT: 0x40, // 64  - '@'
+  TILDE: 0x7e, // 126 - '~'
+  LOWER_M: 0x6d, // 109 - 'm'
+} as const;
+
 export type Tokenizer = {
   push(input: string): Token[];
   reset(): void;
 };
 
+const isTerminatorCode = (charCode: number): boolean => {
+  return charCode >= CHAR_CODES.AT && charCode <= CHAR_CODES.TILDE;
+};
+
 export function createTokenizer(): Tokenizer {
   let buffer = "";
-
-  const isTerminator = (char: string): boolean => {
-    return char >= "@" && char <= "~";
-  };
 
   const handleSGR = (params: string): Token[] => {
     const tokens: Token[] = [];
@@ -131,7 +140,10 @@ export function createTokenizer(): Tokenizer {
     // Process each parameter
     while (i <= params.length) {
       // Found separator or end of string
-      if (i === params.length || params[i] === ";") {
+      if (
+        i === params.length ||
+        params.charCodeAt(i) === CHAR_CODES.SEMICOLON
+      ) {
         const segment = params.slice(start, i);
         const code = segment === "" ? null : parseInt(segment, 10);
 
@@ -161,7 +173,11 @@ export function createTokenizer(): Tokenizer {
 
         // Get next parameter (mode: 2 or 5)
         const modeStart = pos;
-        while (pos < params.length && params[pos] !== ";") pos++;
+        while (
+          pos < params.length &&
+          params.charCodeAt(pos) !== CHAR_CODES.SEMICOLON
+        )
+          pos++;
         const modeStr = params.slice(modeStart, pos);
         const mode = modeStr === "" ? null : parseInt(modeStr, 10);
 
@@ -169,7 +185,11 @@ export function createTokenizer(): Tokenizer {
           // 256-color mode
           pos++; // Skip semicolon
           const colorStart = pos;
-          while (pos < params.length && params[pos] !== ";") pos++;
+          while (
+            pos < params.length &&
+            params.charCodeAt(pos) !== CHAR_CODES.SEMICOLON
+          )
+            pos++;
           const colorStr = params.slice(colorStart, pos);
           const colorCode = colorStr === "" ? null : parseInt(colorStr, 10);
 
@@ -188,7 +208,11 @@ export function createTokenizer(): Tokenizer {
           for (let j = 0; j < 3; j++) {
             pos++; // Skip semicolon
             const valueStart = pos;
-            while (pos < params.length && params[pos] !== ";") pos++;
+            while (
+              pos < params.length &&
+              params.charCodeAt(pos) !== CHAR_CODES.SEMICOLON
+            )
+              pos++;
             const valueStr = params.slice(valueStart, pos);
             const value = valueStr === "" ? null : parseInt(valueStr, 10);
             rgbValues.push(value);
@@ -254,7 +278,9 @@ export function createTokenizer(): Tokenizer {
     let i = 0;
 
     while (i < fullInput.length) {
-      if (fullInput[i] === "\x1b") {
+      const charCode = fullInput.charCodeAt(i);
+
+      if (charCode === CHAR_CODES.ESC) {
         // Check if we have enough characters for a complete escape sequence start
         if (i + 1 >= fullInput.length) {
           // Incomplete escape sequence, buffer it
@@ -266,7 +292,9 @@ export function createTokenizer(): Tokenizer {
           break;
         }
 
-        if (fullInput[i + 1] === "[") {
+        const nextCharCode = fullInput.charCodeAt(i + 1);
+        
+        if (nextCharCode === CHAR_CODES.LEFT_BRACKET) {
           // Save any accumulated text
           if (textChunks.length > 0) {
             tokens.push({ type: "text", text: textChunks.join("") });
@@ -275,35 +303,38 @@ export function createTokenizer(): Tokenizer {
 
           // Find the end of the escape sequence
           let j = i + 2;
-          while (j < fullInput.length && !isTerminator(fullInput[j]!)) {
-            // Safe: j < fullInput.length ensures character exists
+          let foundTerminator = false;
+          while (j < fullInput.length) {
+            const terminatorCode = fullInput.charCodeAt(j);
+            if (isTerminatorCode(terminatorCode)) {
+              // Found terminator
+              const params = fullInput.slice(i + 2, j);
+              
+              if (terminatorCode === CHAR_CODES.LOWER_M) {
+                tokens.push(...handleSGR(params));
+              } else {
+                // Non-SGR sequence - emit as unknown
+                const sequence = fullInput.slice(i, j + 1);
+                tokens.push({ type: "unknown", sequence });
+              }
+              
+              i = j + 1;
+              foundTerminator = true;
+              break;
+            }
             j++;
           }
-
-          if (j >= fullInput.length) {
+          
+          if (!foundTerminator) {
             // Incomplete sequence, buffer it
             buffer = fullInput.slice(i);
             break;
           }
-
-          // Parse the complete sequence
-          const params = fullInput.slice(i + 2, j);
-          const terminator = fullInput[j];
-
-          if (terminator === "m") {
-            tokens.push(...handleSGR(params));
-          } else {
-            // Non-SGR sequence - emit as unknown
-            const sequence = fullInput.slice(i, j + 1);
-            tokens.push({ type: "unknown", sequence });
-          }
-
-          i = j + 1;
         } else {
           // Not an escape sequence, treat as regular text
           // Grab span of plain text instead of character by character
           const textStart = i;
-          while (i < fullInput.length && fullInput[i] !== "\x1b") {
+          while (i < fullInput.length && fullInput.charCodeAt(i) !== CHAR_CODES.ESC) {
             i++;
           }
           textChunks.push(fullInput.slice(textStart, i));
@@ -311,7 +342,7 @@ export function createTokenizer(): Tokenizer {
       } else {
         // Grab span of plain text instead of character by character
         const textStart = i;
-        while (i < fullInput.length && fullInput[i] !== "\x1b") {
+        while (i < fullInput.length && fullInput.charCodeAt(i) !== CHAR_CODES.ESC) {
           i++;
         }
         if (i > textStart) {
