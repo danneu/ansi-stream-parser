@@ -28,7 +28,7 @@ export function getColorName(color: Extract<Color, { type: "16" }>): ColorName {
   return colorNames[color.code]!;
 }
 
-type RGB = [number, number, number];
+type RGB = [r: number, g: number, b: number];
 
 // Type-safe guarantee that the palette can safely map 0-15
 // prettier-ignore

@@ -34,7 +34,7 @@ export type Color16 = (typeof Color16)[keyof typeof Color16];
 export type Color =
   | { type: "16"; code: Color16 }
   | { type: "256"; code: number }
-  | { type: "rgb"; rgb: [number, number, number] };
+  | { type: "rgb"; rgb: [r: number, g: number, b: number] };
 
 export type Decoration =
   | "bold"
@@ -95,7 +95,10 @@ function styleToStyledText(text: string, style: CurrentStyle): StyledText {
 function validateColor(color: RawColor): Color | null {
   switch (color.type) {
     case "16":
-      // 16-color is always valid 0-15
+      // 16-color is always valid 0-15 (tokenizer ensures this) but let's be robust
+      if (color.code === null || color.code < 0 || color.code > 15) {
+        return null;
+      }
       return { type: "16", code: color.code as Color16 };
     case "256": {
       // 256-color might be invalid
