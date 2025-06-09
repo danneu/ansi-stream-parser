@@ -1,5 +1,6 @@
 export {
   createParser,
+  Color16,
   type StyledText,
   type Parser,
   type Color,
