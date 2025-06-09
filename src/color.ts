@@ -36,10 +36,10 @@ type RGB = [number, number, number];
 
 // Type-safe guarantee that the palette can safely map 0-15
 // prettier-ignore
-type Palette16 = readonly [
+export type Palette16 =  [
   RGB, RGB, RGB, RGB, RGB, RGB, RGB, RGB, 
   RGB, RGB, RGB, RGB, RGB, RGB, RGB, RGB,
-];
+]
 
 const PALETTE_16: Palette16 = [
   [0, 0, 0], // 0: black

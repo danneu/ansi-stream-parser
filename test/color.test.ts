@@ -1,6 +1,11 @@
 import { test, describe } from "node:test";
 import { strict as assert } from "node:assert";
-import { getColorName, getColorHexCode, colorNames } from "../src/color.js";
+import {
+  getColorName,
+  getColorHexCode,
+  colorNames,
+  type Palette16,
+} from "../src/color.js";
 
 describe("Color helpers", () => {
   describe("getColorName", () => {
@@ -40,13 +45,13 @@ describe("Color helpers", () => {
       // Standard colors (0-15)
       assert.equal(getColorHexCode({ type: "256", code: 0 }), "#000000");
       assert.equal(getColorHexCode({ type: "256", code: 1 }), "#aa0000");
-      
+
       // 6x6x6 color cube (16-231)
       assert.equal(getColorHexCode({ type: "256", code: 16 }), "#000000"); // (0,0,0)
       assert.equal(getColorHexCode({ type: "256", code: 196 }), "#ff0000"); // (5,0,0)
       assert.equal(getColorHexCode({ type: "256", code: 46 }), "#00ff00"); // (0,5,0)
       assert.equal(getColorHexCode({ type: "256", code: 21 }), "#0000ff"); // (0,0,5)
-      
+
       // Grayscale (232-255)
       assert.equal(getColorHexCode({ type: "256", code: 232 }), "#080808");
       assert.equal(getColorHexCode({ type: "256", code: 255 }), "#eeeeee");
@@ -54,22 +59,37 @@ describe("Color helpers", () => {
 
     test("should convert RGB colors to hex", () => {
       assert.equal(getColorHexCode({ type: "rgb", rgb: [0, 0, 0] }), "#000000");
-      assert.equal(getColorHexCode({ type: "rgb", rgb: [255, 0, 0] }), "#ff0000");
-      assert.equal(getColorHexCode({ type: "rgb", rgb: [0, 255, 0] }), "#00ff00");
-      assert.equal(getColorHexCode({ type: "rgb", rgb: [0, 0, 255] }), "#0000ff");
-      assert.equal(getColorHexCode({ type: "rgb", rgb: [255, 255, 255] }), "#ffffff");
-      assert.equal(getColorHexCode({ type: "rgb", rgb: [170, 85, 42] }), "#aa552a");
+      assert.equal(
+        getColorHexCode({ type: "rgb", rgb: [255, 0, 0] }),
+        "#ff0000"
+      );
+      assert.equal(
+        getColorHexCode({ type: "rgb", rgb: [0, 255, 0] }),
+        "#00ff00"
+      );
+      assert.equal(
+        getColorHexCode({ type: "rgb", rgb: [0, 0, 255] }),
+        "#0000ff"
+      );
+      assert.equal(
+        getColorHexCode({ type: "rgb", rgb: [255, 255, 255] }),
+        "#ffffff"
+      );
+      assert.equal(
+        getColorHexCode({ type: "rgb", rgb: [170, 85, 42] }),
+        "#aa552a"
+      );
     });
 
     test("should use custom palette for 16-color codes", () => {
-      const customPalette = [
-        [0, 0, 0],       // black
-        [255, 0, 0],     // red (brighter than default)
-        [0, 255, 0],     // green (brighter than default)
-        [255, 255, 0],   // yellow (brighter than default)
-        [0, 0, 255],     // blue (brighter than default)
-        [255, 0, 255],   // magenta (brighter than default)
-        [0, 255, 255],   // cyan (brighter than default)
+      const customPalette: Palette16 = [
+        [0, 0, 0], // black
+        [255, 0, 0], // red (brighter than default)
+        [0, 255, 0], // green (brighter than default)
+        [255, 255, 0], // yellow (brighter than default)
+        [0, 0, 255], // blue (brighter than default)
+        [255, 0, 255], // magenta (brighter than default)
+        [0, 255, 255], // cyan (brighter than default)
         [255, 255, 255], // white (brighter than default)
         [128, 128, 128], // bright black (different gray)
         [255, 128, 128], // bright red
@@ -79,7 +99,7 @@ describe("Color helpers", () => {
         [255, 128, 255], // bright magenta
         [128, 255, 255], // bright cyan
         [255, 255, 255], // bright white
-      ] as const;
+      ];
 
       assert.equal(
         getColorHexCode({ type: "16", code: 1 }, customPalette),
@@ -96,23 +116,23 @@ describe("Color helpers", () => {
     });
 
     test("should not use custom palette for 256-color or RGB", () => {
-      const customPalette = [
+      const customPalette: Palette16 = [
         [255, 255, 255], // white for black
-        [0, 255, 0],     // green for red
-        [255, 0, 0],     // red for green
-        [0, 0, 255],     // blue for yellow
-        [255, 255, 0],   // yellow for blue
-        [0, 0, 0],       // black for magenta
-        [255, 0, 255],   // magenta for cyan
-        [0, 255, 255],   // cyan for white
+        [0, 255, 0], // green for red
+        [255, 0, 0], // red for green
+        [0, 0, 255], // blue for yellow
+        [255, 255, 0], // yellow for blue
+        [0, 0, 0], // black for magenta
+        [255, 0, 255], // magenta for cyan
+        [0, 255, 255], // cyan for white
         [128, 128, 128], // gray
-        [64, 64, 64],    // dark gray
+        [64, 64, 64], // dark gray
         [192, 192, 192], // light gray
-        [96, 96, 96],    // another gray
+        [96, 96, 96], // another gray
         [160, 160, 160], // another gray
         [224, 224, 224], // another gray
-        [32, 32, 32],    // another gray
-        [0, 0, 0],       // black
+        [32, 32, 32], // another gray
+        [0, 0, 0], // black
       ] as const;
 
       // 256-color should ignore custom palette
@@ -134,7 +154,7 @@ describe("Color helpers", () => {
       assert.equal(colorNames.length, 16);
       assert.deepEqual(colorNames, [
         "black",
-        "red", 
+        "red",
         "green",
         "yellow",
         "blue",
@@ -143,7 +163,7 @@ describe("Color helpers", () => {
         "white",
         "bright-black",
         "bright-red",
-        "bright-green", 
+        "bright-green",
         "bright-yellow",
         "bright-blue",
         "bright-magenta",
