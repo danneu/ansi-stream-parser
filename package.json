@@ -1,6 +1,6 @@
 {
   "name": "ansi-stream-parser",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A parser for ANSI escape sequence text (SGR) that works on streaming/partial input",
   "keywords": [
     "ansi",
