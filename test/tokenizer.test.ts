@@ -4,14 +4,14 @@ import { createTokenizer } from "../src/tokenizer.js";
 import type { Token } from "../src/tokenizer.js";
 
 describe("ANSI Stream Tokenizer", () => {
-  test("should parse simple text", () => {
+  test("should handle simple text", () => {
     const tokenizer = createTokenizer();
     const tokens = tokenizer.push("hello world");
 
     assert.deepEqual(tokens, [{ type: "text", text: "hello world" }]);
   });
 
-  test("should parse basic color codes", () => {
+  test("should handle basic color codes", () => {
     const tokenizer = createTokenizer();
     const tokens = tokenizer.push("\x1b[31mred text\x1b[0m");
 

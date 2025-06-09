@@ -3,7 +3,7 @@ import { strict as assert } from "node:assert";
 import { createTokenizer } from "../src/tokenizer.js";
 
 describe("ANSI 16 Colors", () => {
-  test("should parse all 8 normal foreground colors", () => {
+  test("should handle all 8 normal foreground colors", () => {
     const tokenizer = createTokenizer();
     const tokens = tokenizer.push(
       "\x1b[30mBlack\x1b[0m " +
@@ -51,7 +51,7 @@ describe("ANSI 16 Colors", () => {
     ]);
   });
 
-  test("should parse all 8 bright foreground colors", () => {
+  test("should handle all 8 bright foreground colors", () => {
     const tokenizer = createTokenizer();
     const tokens = tokenizer.push(
       "\x1b[90mBright Black\x1b[0m " +
@@ -99,7 +99,7 @@ describe("ANSI 16 Colors", () => {
     ]);
   });
 
-  test("should parse all 8 normal background colors", () => {
+  test("should handle all 8 normal background colors", () => {
     const tokenizer = createTokenizer();
     const tokens = tokenizer.push(
       "\x1b[40mBlack BG\x1b[0m " +
@@ -147,7 +147,7 @@ describe("ANSI 16 Colors", () => {
     ]);
   });
 
-  test("should parse all 8 bright background colors", () => {
+  test("should handle all 8 bright background colors", () => {
     const tokenizer = createTokenizer();
     const tokens = tokenizer.push(
       "\x1b[100mBright Black BG\x1b[0m " +
@@ -195,7 +195,7 @@ describe("ANSI 16 Colors", () => {
     ]);
   });
 
-  test("should parse combined foreground and background colors", () => {
+  test("should handle combined foreground and background colors", () => {
     const tokenizer = createTokenizer();
     const tokens = tokenizer.push(
       "\x1b[31;47mRed on White\x1b[0m " +
@@ -215,7 +215,7 @@ describe("ANSI 16 Colors", () => {
     ]);
   });
 
-  test("should parse colors mixed with text attributes", () => {
+  test("should handle colors mixed with text attributes", () => {
     const tokenizer = createTokenizer();
     const tokens = tokenizer.push(
       "\x1b[1;31mBold Red\x1b[0m " + "\x1b[4;94mUnderlined Bright Blue\x1b[0m"

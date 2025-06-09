@@ -55,8 +55,8 @@ function styleToStyledText(text: string, style: Style): StyledText {
   }
 
   if (style.decorations.size > 0) {
-    // Note: Important to ensure we're not just passing a reference to the set here
-    // Of course, turning it into an array also works.
+    // Note: Important to ensure we're not just passing a reference to the original
+    // object else it will be mutated as parsing continues.
     result.decorations = Array.from(style.decorations);
   }
 
@@ -67,17 +67,23 @@ export function createParser(): Parser {
   const tokenizer = createTokenizer();
   let currentStyle = createStyle();
 
-  function finalizeColor(color: RawColor): Color {
+  function validateColor(color: RawColor): Color | null {
     switch (color.type) {
       case "16":
+        // 16-color is always valid
         return { type: "16", code: color.code };
       case "256": {
-        let code = color.code ?? 255;
-        code = Math.max(0, Math.min(code, 255));
-        return { type: "256", code };
+        if (color.code === null || color.code < 0 || color.code > 255) {
+          return null;
+        }
+        return { type: "256", code: color.code };
       }
       case "rgb":
-        return { type: "rgb", rgb: color.rgb ?? [255, 255, 255] }; // white
+        // TODO: Validate RGB values
+        if (color.rgb === null) {
+          return null;
+        }
+        return { type: "rgb", rgb: color.rgb };
       default: {
         const exhaustive: never = color;
         throw new Error(`Unhandled color: ${JSON.stringify(exhaustive)}`);
@@ -96,11 +102,13 @@ export function createParser(): Parser {
           break;
 
         case "set-fg-color":
-          currentStyle.fg = finalizeColor(token.color);
+          // If color is invalid, reset fg.
+          currentStyle.fg = validateColor(token.color);
           break;
 
         case "set-bg-color":
-          currentStyle.bg = finalizeColor(token.color);
+          // If color is invalid, reset bg.
+          currentStyle.bg = validateColor(token.color);
           break;
 
         case "reset-fg-color":

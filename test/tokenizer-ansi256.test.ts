@@ -4,7 +4,7 @@ import { createTokenizer } from "../src/tokenizer.js";
 import type { Token } from "../src/tokenizer.js";
 
 describe("ANSI 256 Colors", () => {
-  test("should parse basic 256 foreground colors", () => {
+  test("should handle basic 256 foreground colors", () => {
     const tokenizer = createTokenizer();
     const tokens = tokenizer.push(
       "\x1b[38;5;0mColor 0\x1b[0m " +
@@ -27,7 +27,7 @@ describe("ANSI 256 Colors", () => {
     ]);
   });
 
-  test("should parse basic 256 background colors", () => {
+  test("should handle basic 256 background colors", () => {
     const tokenizer = createTokenizer();
     const tokens = tokenizer.push(
       "\x1b[48;5;0mBG 0\x1b[0m " +
@@ -50,7 +50,7 @@ describe("ANSI 256 Colors", () => {
     ]);
   });
 
-  test("should parse boundary values correctly", () => {
+  test("should handle boundary values correctly", () => {
     const tokenizer = createTokenizer();
     const tokens = tokenizer.push(
       "\x1b[38;5;0mMin\x1b[0m " + // Minimum valid value

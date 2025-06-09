@@ -284,14 +284,14 @@ describe("ANSI Parser", () => {
     assert.equal(chunks[0]?.bg, undefined);
   });
 
-  test("should handle missing 256-color code with default", () => {
+  test("should handle missing 256-color code by resetting color", () => {
     const parser = createParser();
     const chunks = parser.push("\x1b[38;5mtext\x1b[0m");
 
     assert.deepEqual(chunks, [
       {
         text: "text",
-        fg: { type: "256", code: 255 }, // Default to white (255)
+        // Invalid 256 color (missing code) resets fg color
       },
     ]);
   });
@@ -312,7 +312,7 @@ describe("ANSI Parser", () => {
     ]);
   });
 
-  test("should handle missing background color codes with defaults", () => {
+  test("should handle missing background color codes by resetting color", () => {
     const parser = createParser();
 
     // Missing 256-color background
@@ -320,7 +320,7 @@ describe("ANSI Parser", () => {
     assert.deepEqual(chunks, [
       {
         text: "text1",
-        bg: { type: "256", code: 255 }, // Default to white (255)
+        // Invalid 256 bg color (missing code) resets bg color
       },
     ]);
 
@@ -353,33 +353,33 @@ describe("ANSI Parser", () => {
     ]);
   });
 
-  test("should clamp out-of-range 256-color codes", () => {
+  test("should reset color for out-of-range 256-color codes", () => {
     const parser = createParser();
 
-    // Color code too high (> 255) - clamped to 255
+    // Color code too high (> 255) - resets color
     let chunks = parser.push("\x1b[38;5;256mtext1\x1b[0m");
     assert.deepEqual(chunks, [
       {
         text: "text1",
-        fg: { type: "256", code: 255 }, // Clamped to max (255)
+        // Invalid 256 fg color (> 255) resets fg color
       },
     ]);
 
-    // Negative color code - clamped to 0
+    // Negative color code - resets color
     chunks = parser.push("\x1b[48;5;-1mtext2\x1b[0m");
     assert.deepEqual(chunks, [
       {
         text: "text2",
-        bg: { type: "256", code: 0 }, // Clamped to min (0)
+        // Invalid 256 bg color (negative) resets bg color
       },
     ]);
 
-    // Way too high - still clamped to 255
+    // Way too high - still resets color
     chunks = parser.push("\x1b[38;5;999mtext3\x1b[0m");
     assert.deepEqual(chunks, [
       {
         text: "text3",
-        fg: { type: "256", code: 255 }, // Clamped to max (255)
+        // Invalid 256 fg color (> 255) resets fg color
       },
     ]);
 
