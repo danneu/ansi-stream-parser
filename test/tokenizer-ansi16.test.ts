@@ -222,12 +222,12 @@ describe("ANSI 16 Colors", () => {
     );
 
     assert.deepEqual(tokens, [
-      { type: "bold" },
+      { type: "bold", enable: true },
       { type: "set-fg-color", color: { type: "16", code: 1 } },
       { type: "text", text: "Bold Red" },
       { type: "reset-all" },
       { type: "text", text: " " },
-      { type: "underline" },
+      { type: "underline", enable: true },
       { type: "set-fg-color", color: { type: "16", code: 12 } },
       { type: "text", text: "Underlined Bright Blue" },
       { type: "reset-all" },

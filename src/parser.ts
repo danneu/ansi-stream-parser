@@ -64,39 +64,39 @@ function styleToStyledText(text: string, style: CurrentStyle): StyledText {
   return result;
 }
 
+function validateColor(color: RawColor): Color | null {
+  switch (color.type) {
+    case "16":
+      // 16-color is always valid 0-15
+      return { type: "16", code: color.code };
+    case "256": {
+      // 256-color might be invalid
+      if (color.code === null || color.code < 0 || color.code > 255) {
+        return null;
+      }
+      return { type: "256", code: color.code };
+    }
+    case "rgb": {
+      // RGB might be invalid
+      if (color.rgb === null) {
+        return null;
+      }
+      const [r, g, b] = color.rgb;
+      if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) {
+        return null;
+      }
+      return { type: "rgb", rgb: color.rgb };
+    }
+    default: {
+      const exhaustive: never = color;
+      throw new Error(`Unhandled color: ${JSON.stringify(exhaustive)}`);
+    }
+  }
+}
+
 export function createParser(): Parser {
   const tokenizer = createTokenizer();
   let currentStyle = createStyle();
-
-  function validateColor(color: RawColor): Color | null {
-    switch (color.type) {
-      case "16":
-        // 16-color is always valid 0-15
-        return { type: "16", code: color.code };
-      case "256": {
-        // 256-color might be invalid
-        if (color.code === null || color.code < 0 || color.code > 255) {
-          return null;
-        }
-        return { type: "256", code: color.code };
-      }
-      case "rgb": {
-        // RGB might be invalid
-        if (color.rgb === null) {
-          return null;
-        }
-        const [r, g, b] = color.rgb;
-        if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) {
-          return null;
-        }
-        return { type: "rgb", rgb: color.rgb };
-      }
-      default: {
-        const exhaustive: never = color;
-        throw new Error(`Unhandled color: ${JSON.stringify(exhaustive)}`);
-      }
-    }
-  }
 
   const push = (input: string): StyledText[] => {
     const tokens = tokenizer.push(input);
@@ -131,67 +131,18 @@ export function createParser(): Parser {
           break;
 
         case "bold":
-          currentStyle.decorations.add("bold");
-          break;
-
         case "dim":
-          currentStyle.decorations.add("dim");
-          break;
-
         case "italic":
-          currentStyle.decorations.add("italic");
-          break;
-
         case "underline":
-          currentStyle.decorations.add("underline");
-          break;
-
         case "blink":
-          currentStyle.decorations.add("blink");
-          break;
-
         case "reverse":
-          currentStyle.decorations.add("reverse");
-          break;
-
         case "hidden":
-          currentStyle.decorations.add("hidden");
-          break;
-
         case "strikethrough":
-          currentStyle.decorations.add("strikethrough");
-          break;
-
-        case "no-bold":
-          currentStyle.decorations.delete("bold");
-          break;
-
-        case "no-dim":
-          currentStyle.decorations.delete("dim");
-          break;
-
-        case "no-italic":
-          currentStyle.decorations.delete("italic");
-          break;
-
-        case "no-underline":
-          currentStyle.decorations.delete("underline");
-          break;
-
-        case "no-blink":
-          currentStyle.decorations.delete("blink");
-          break;
-
-        case "no-reverse":
-          currentStyle.decorations.delete("reverse");
-          break;
-
-        case "no-hidden":
-          currentStyle.decorations.delete("hidden");
-          break;
-
-        case "no-strikethrough":
-          currentStyle.decorations.delete("strikethrough");
+          if (token.enable) {
+            currentStyle.decorations.add(token.type);
+          } else {
+            currentStyle.decorations.delete(token.type);
+          }
           break;
 
         case "unknown":

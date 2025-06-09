@@ -10,22 +10,14 @@ export type Token =
   | { type: "reset-fg-color" }
   | { type: "reset-bg-color" }
   | { type: "reset-all" }
-  | { type: "bold" }
-  | { type: "dim" }
-  | { type: "italic" }
-  | { type: "underline" }
-  | { type: "blink" }
-  | { type: "reverse" }
-  | { type: "hidden" }
-  | { type: "strikethrough" }
-  | { type: "no-bold" }
-  | { type: "no-dim" }
-  | { type: "no-italic" }
-  | { type: "no-underline" }
-  | { type: "no-blink" }
-  | { type: "no-reverse" }
-  | { type: "no-hidden" }
-  | { type: "no-strikethrough" }
+  | { type: "bold"; enable: boolean }
+  | { type: "dim"; enable: boolean }
+  | { type: "italic"; enable: boolean }
+  | { type: "underline"; enable: boolean }
+  | { type: "blink"; enable: boolean }
+  | { type: "reverse"; enable: boolean }
+  | { type: "hidden"; enable: boolean }
+  | { type: "strikethrough"; enable: boolean }
   // other
   | { type: "unknown"; sequence: string };
 
@@ -38,24 +30,27 @@ function createSGRLookup(): Record<number, TokenHandler> {
     0: () => ({ type: "reset-all" }),
 
     // Text attributes
-    1: () => ({ type: "bold" }),
-    2: () => ({ type: "dim" }),
-    3: () => ({ type: "italic" }),
-    4: () => ({ type: "underline" }),
-    5: () => ({ type: "blink" }),
-    7: () => ({ type: "reverse" }),
-    8: () => ({ type: "hidden" }),
-    9: () => ({ type: "strikethrough" }),
+    1: () => ({ type: "bold", enable: true }),
+    2: () => ({ type: "dim", enable: true }),
+    3: () => ({ type: "italic", enable: true }),
+    4: () => ({ type: "underline", enable: true }),
+    5: () => ({ type: "blink", enable: true }),
+    7: () => ({ type: "reverse", enable: true }),
+    8: () => ({ type: "hidden", enable: true }),
+    9: () => ({ type: "strikethrough", enable: true }),
 
     // Remove text attributes
-    21: () => ({ type: "no-bold" }),
-    22: () => [{ type: "no-bold" }, { type: "no-dim" }], // Returns array
-    23: () => ({ type: "no-italic" }),
-    24: () => ({ type: "no-underline" }),
-    25: () => ({ type: "no-blink" }),
-    27: () => ({ type: "no-reverse" }),
-    28: () => ({ type: "no-hidden" }),
-    29: () => ({ type: "no-strikethrough" }),
+    21: () => ({ type: "bold", enable: false }),
+    22: () => [
+      { type: "bold", enable: false },
+      { type: "dim", enable: false },
+    ],
+    23: () => ({ type: "italic", enable: false }),
+    24: () => ({ type: "underline", enable: false }),
+    25: () => ({ type: "blink", enable: false }),
+    27: () => ({ type: "reverse", enable: false }),
+    28: () => ({ type: "hidden", enable: false }),
+    29: () => ({ type: "strikethrough", enable: false }),
 
     // Color resets
     39: () => ({ type: "reset-fg-color" }),

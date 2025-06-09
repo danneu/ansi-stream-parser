@@ -31,10 +31,9 @@ console.log(styled);
 
 ## Streaming
 
-The parser maintains state across multiple calls, making it ideal for streaming:
+The parser maintains state across multiple calls making it ideal for streaming:
 
-However, note that you must consume the return value of each `push` call or you
-will lose the parsed results.
+**Note:** you must consume the return value of each `push` call or you will lose the parsed results.
 
 ```typescript
 const parser = createParser();
@@ -42,8 +41,10 @@ const parser = createParser();
 // Feed data chunk by chunk
 const a = parser.push("\x1b[38;5;");
 // a is [] (still buffering)
+
 const b = parser.push("123m");
 // b is [] (still buffering)
+
 const result = parser.push("Colored text\x1b[0m");
 // result is [ { text: 'Colored text', fg: { type: '256', code: 123 } } ]
 ```

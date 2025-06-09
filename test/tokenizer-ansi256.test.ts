@@ -169,9 +169,9 @@ describe("ANSI 256 Colors", () => {
     );
 
     assert.deepEqual(tokens, [
-      { type: "bold" },
+      { type: "bold", enable: true },
       { type: "set-fg-color", color: { type: "256", code: 196 } },
-      { type: "underline" },
+      { type: "underline", enable: true },
       { type: "text", text: "Bold Red Underline" },
       { type: "reset-all" },
     ]);

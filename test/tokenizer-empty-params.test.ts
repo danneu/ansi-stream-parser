@@ -20,8 +20,8 @@ describe("ANSI Empty Parameters", () => {
     const tokens = tokenizer.push("\x1b[1;;4mtext");
 
     assert.deepEqual(tokens, [
-      { type: "bold" },
-      { type: "underline" },
+      { type: "bold", enable: true },
+      { type: "underline", enable: true },
       { type: "text", text: "text" },
     ]);
   });
@@ -84,7 +84,7 @@ describe("ANSI Empty Parameters", () => {
     const tokens = tokenizer.push("\x1b[;1mtext");
 
     assert.deepEqual(tokens, [
-      { type: "bold" },
+      { type: "bold", enable: true },
       { type: "text", text: "text" },
     ]);
   });

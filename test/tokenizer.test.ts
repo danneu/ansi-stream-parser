@@ -49,8 +49,8 @@ describe("ANSI Stream Tokenizer", () => {
     const tokens = tokenizer.push("\x1b[1m\x1b[4mbold underlined\x1b[0m");
 
     assert.deepEqual(tokens, [
-      { type: "bold" },
-      { type: "underline" },
+      { type: "bold", enable: true },
+      { type: "underline", enable: true },
       { type: "text", text: "bold underlined" },
       { type: "reset-all" },
     ]);
@@ -256,8 +256,8 @@ describe("ANSI Stream Tokenizer", () => {
       { type: "text", text: "o" },
       { type: "text", text: "l" },
       { type: "text", text: "d" },
-      { type: "no-bold" },
-      { type: "no-dim" },
+      { type: "bold", enable: false },
+      { type: "dim", enable: false },
       { type: "text", text: "n" },
       { type: "text", text: "o" },
       { type: "text", text: "r" },
@@ -278,7 +278,7 @@ describe("ANSI Stream Tokenizer", () => {
 
     tokens = tokenizer.push(";31m");
     assert.deepEqual(tokens, [
-      { type: "bold" },
+      { type: "bold", enable: true },
       { type: "set-fg-color", color: { type: "16", code: 1 } },
     ]);
 
@@ -510,9 +510,7 @@ describe("ANSI Stream Tokenizer", () => {
 
     // Ensure nothing was buffered - next push should work independently
     tokens = tokenizer.push("plain text");
-    assert.deepEqual(tokens, [
-      { type: "text", text: "plain text" },
-    ]);
+    assert.deepEqual(tokens, [{ type: "text", text: "plain text" }]);
 
     // Test with unknown sequences too
     tokens = tokenizer.push("\x1b[2Jclear\x1b[Hcursor");
@@ -525,9 +523,7 @@ describe("ANSI Stream Tokenizer", () => {
 
     // Ensure no buffering happened
     tokens = tokenizer.push("more");
-    assert.deepEqual(tokens, [
-      { type: "text", text: "more" },
-    ]);
+    assert.deepEqual(tokens, [{ type: "text", text: "more" }]);
   });
 
   test("should only buffer truly incomplete sequences", () => {
@@ -535,9 +531,7 @@ describe("ANSI Stream Tokenizer", () => {
 
     // Incomplete at end - should buffer
     let tokens = tokenizer.push("text\x1b[31");
-    assert.deepEqual(tokens, [
-      { type: "text", text: "text" },
-    ]);
+    assert.deepEqual(tokens, [{ type: "text", text: "text" }]);
 
     // Complete the sequence
     tokens = tokenizer.push("mred");
@@ -548,9 +542,7 @@ describe("ANSI Stream Tokenizer", () => {
 
     // Incomplete escape at very end
     tokens = tokenizer.push("hello\x1b");
-    assert.deepEqual(tokens, [
-      { type: "text", text: "hello" },
-    ]);
+    assert.deepEqual(tokens, [{ type: "text", text: "hello" }]);
 
     // Complete it
     tokens = tokenizer.push("[32mgreen");
@@ -561,9 +553,7 @@ describe("ANSI Stream Tokenizer", () => {
 
     // Incomplete CSI sequence
     tokens = tokenizer.push("text\x1b[");
-    assert.deepEqual(tokens, [
-      { type: "text", text: "text" },
-    ]);
+    assert.deepEqual(tokens, [{ type: "text", text: "text" }]);
 
     // Complete with unknown sequence
     tokens = tokenizer.push("10;20Hmore");
@@ -571,5 +561,61 @@ describe("ANSI Stream Tokenizer", () => {
       { type: "unknown", sequence: "\x1b[10;20H" },
       { type: "text", text: "more" },
     ]);
+  });
+
+  describe("Complex sequence parsing edge cases", () => {
+    test("should handle RGB color followed by style in single sequence", () => {
+      const tokenizer = createTokenizer();
+
+      // This sequence sets foreground to red (RGB) then bold
+      const tokens = tokenizer.push("\x1b[38;2;255;0;0;1m");
+
+      // Expected output:
+      assert.deepEqual(tokens, [
+        { type: "set-fg-color", color: { type: "rgb", rgb: [255, 0, 0] } },
+        { type: "bold", enable: true }
+      ]);
+    });
+
+    test("should handle multiple colors in sequence", () => {
+      const tokenizer = createTokenizer();
+
+      // Multiple colors in sequence
+      const tokens = tokenizer.push("\x1b[38;5;196;48;5;21m");
+      
+      // Should parse both foreground (196) and background (21) colors
+      assert.deepEqual(tokens, [
+        { type: "set-fg-color", color: { type: "256", code: 196 } },
+        { type: "set-bg-color", color: { type: "256", code: 21 } }
+      ]);
+    });
+
+    test("should handle 256-color followed by styles", () => {
+      const tokenizer = createTokenizer();
+
+      // 256-color followed by style
+      const tokens = tokenizer.push("\x1b[38;5;196;1;3m");
+      
+      // Should set color 196, then bold, then italic
+      assert.deepEqual(tokens, [
+        { type: "set-fg-color", color: { type: "256", code: 196 } },
+        { type: "bold", enable: true },
+        { type: "italic", enable: true }
+      ]);
+    });
+
+    test("should handle RGB colors with trailing styles", () => {
+      const tokenizer = createTokenizer();
+
+      // RGB with trailing styles
+      const tokens = tokenizer.push("\x1b[38;2;255;128;0;48;2;0;0;255;4m");
+      
+      // Should set orange foreground, blue background, and underline
+      assert.deepEqual(tokens, [
+        { type: "set-fg-color", color: { type: "rgb", rgb: [255, 128, 0] } },
+        { type: "set-bg-color", color: { type: "rgb", rgb: [0, 0, 255] } },
+        { type: "underline", enable: true }
+      ]);
+    });
   });
 });
