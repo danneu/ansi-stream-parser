@@ -1,4 +1,4 @@
-import type { Color, Color16, Color256 } from "./parser";
+import type { Color } from "./parser";
 
 // Color helpers useful for the user consuming the output of the parser
 // like when converting StyledText to HTML
@@ -24,7 +24,7 @@ export const colorNames = [
 
 type ColorName = (typeof colorNames)[number];
 
-export function getColorName(color: Color16): ColorName {
+export function getColorName(color: Extract<Color, { type: "16" }>): ColorName {
   return colorNames[color.code]!;
 }
 
@@ -77,7 +77,9 @@ export function getColorRgb(color: Color): [number, number, number] {
 /**
  * Convert 256-color code to RGB
  */
-function color256ToRgb({ code }: Color256): [number, number, number] {
+function color256ToRgb({
+  code,
+}: Extract<Color, { type: "256" }>): [number, number, number] {
   // 0-15: Standard colors (use 16-color palette)
   if (code < 16) {
     return PALETTE_16[code]!;

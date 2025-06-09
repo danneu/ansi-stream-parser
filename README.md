@@ -91,13 +91,14 @@ import {
   getColorName,
   getColorHexCode,
   colorNames,
+  Color16,
 } from "ansi-stream-parser/color";
 
 // Get color name for 16-color codes
 const colorName = getColorName({ type: "16", code: 1 }); // "red"
 
 // Convert any color to hex code
-const hex16 = getColorHexCode({ type: "16", code: 1 }); // "#aa0000"
+const hex16 = getColorHexCode({ type: "16", code: Color16.red }); // "#aa0000"
 const hex256 = getColorHexCode({ type: "256", code: 196 }); // "#ff0000"
 const hexRgb = getColorHexCode({ type: "rgb", rgb: [255, 0, 0] }); // "#ff0000"
 

@@ -2,11 +2,39 @@ import { createTokenizer, type RawColor } from "./tokenizer";
 
 // Parser parses chunks of text and emits styled text
 
-export type Color16 = { type: "16"; code: number };
-export type Color256 = { type: "256"; code: number };
-export type ColorRgb = { type: "rgb"; rgb: [number, number, number] };
+/**
+ * 16-color palette useful for creating `Color` objects by hand.
+ *
+ * @example
+ * ```typescript
+ * const color: Color = { type: "16", code: Color16.red };
+ * ```
+ */
+export const Color16 = {
+  black: 0,
+  red: 1,
+  green: 2,
+  yellow: 3,
+  blue: 4,
+  magenta: 5,
+  cyan: 6,
+  white: 7,
+  brightBlack: 8,
+  brightRed: 9,
+  brightGreen: 10,
+  brightYellow: 11,
+  brightBlue: 12,
+  brightMagenta: 13,
+  brightCyan: 14,
+  brightWhite: 15,
+} as const;
 
-export type Color = Color16 | Color256 | ColorRgb;
+export type Color16 = (typeof Color16)[keyof typeof Color16];
+
+export type Color =
+  | { type: "16"; code: Color16 }
+  | { type: "256"; code: number }
+  | { type: "rgb"; rgb: [number, number, number] };
 
 export type Decoration =
   | "bold"
@@ -68,7 +96,7 @@ function validateColor(color: RawColor): Color | null {
   switch (color.type) {
     case "16":
       // 16-color is always valid 0-15
-      return { type: "16", code: color.code };
+      return { type: "16", code: color.code as Color16 };
     case "256": {
       // 256-color might be invalid
       if (color.code === null || color.code < 0 || color.code > 255) {

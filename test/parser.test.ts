@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import { strict as assert } from "node:assert";
-import { createParser } from "../src/parser.js";
+import { Color16, createParser } from "../src/parser.js";
 
 describe("ANSI Parser", () => {
   test("should parse plain text", () => {
@@ -17,7 +17,7 @@ describe("ANSI Parser", () => {
     assert.deepEqual(chunks, [
       {
         text: "red text",
-        fg: { type: "16", code: 1 },
+        fg: { type: "16", code: Color16.red },
       },
     ]);
   });
@@ -29,7 +29,7 @@ describe("ANSI Parser", () => {
     assert.deepEqual(chunks, [
       {
         text: "red background",
-        bg: { type: "16", code: 1 },
+        bg: { type: "16", code: Color16.red },
       },
     ]);
   });
@@ -65,8 +65,8 @@ describe("ANSI Parser", () => {
     assert.deepEqual(chunks, [
       {
         text: "bold red on red",
-        fg: { type: "16", code: 1 },
-        bg: { type: "16", code: 1 },
+        fg: { type: "16", code: Color16.red },
+        bg: { type: "16", code: Color16.red },
         decorations: ["bold"],
       },
     ]);
@@ -79,7 +79,7 @@ describe("ANSI Parser", () => {
     assert.deepEqual(chunks, [
       {
         text: "red",
-        fg: { type: "16", code: 1 },
+        fg: { type: "16", code: Color16.red },
       },
     ]);
 
@@ -87,7 +87,7 @@ describe("ANSI Parser", () => {
     assert.deepEqual(chunks2, [
       {
         text: " more red",
-        fg: { type: "16", code: 1 },
+        fg: { type: "16", code: Color16.red },
       },
     ]);
   });
@@ -100,7 +100,7 @@ describe("ANSI Parser", () => {
       { text: "normal " },
       {
         text: "red",
-        fg: { type: "16", code: 1 },
+        fg: { type: "16", code: Color16.red },
       },
       { text: " normal" },
     ]);
@@ -139,12 +139,12 @@ describe("ANSI Parser", () => {
     assert.deepEqual(chunks, [
       {
         text: "red on red",
-        fg: { type: "16", code: 1 },
-        bg: { type: "16", code: 1 },
+        fg: { type: "16", code: Color16.red },
+        bg: { type: "16", code: Color16.red },
       },
       {
         text: " no fg",
-        bg: { type: "16", code: 1 },
+        bg: { type: "16", code: Color16.red },
       },
       { text: " no bg" },
     ]);
@@ -190,7 +190,7 @@ describe("ANSI Parser", () => {
       { text: "text" },
       {
         text: "red",
-        fg: { type: "16", code: 1 },
+        fg: { type: "16", code: Color16.red },
       },
     ]);
   });
@@ -202,7 +202,7 @@ describe("ANSI Parser", () => {
     assert.deepEqual(chunks, [
       {
         text: "bright red",
-        fg: { type: "16", code: 9 },
+        fg: { type: "16", code: Color16.brightRed },
       },
     ]);
   });
@@ -218,7 +218,7 @@ describe("ANSI Parser", () => {
     assert.deepEqual(chunks, [
       {
         text: "red",
-        fg: { type: "16", code: 1 },
+        fg: { type: "16", code: Color16.red },
       },
     ]);
   });
@@ -341,7 +341,7 @@ describe("ANSI Parser", () => {
       { text: "text1" }, // Unknown sequence ignored
       {
         text: "red",
-        fg: { type: "16", code: 1 },
+        fg: { type: "16", code: Color16.red },
       },
     ]);
 
