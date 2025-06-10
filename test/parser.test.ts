@@ -133,7 +133,7 @@ describe("ANSI Parser", () => {
   test("should handle partial color resets", () => {
     const parser = createParser();
     const chunks = parser.push(
-      "\x1b[31;41mred on red\x1b[39m no fg\x1b[49m no bg"
+      "\x1b[31;41mred on red\x1b[39m no fg\x1b[49m no bg",
     );
 
     assert.deepEqual(chunks, [
@@ -153,7 +153,7 @@ describe("ANSI Parser", () => {
   test("should handle decoration removal", () => {
     const parser = createParser();
     const chunks = parser.push(
-      "\x1b[1;4mbold underlined\x1b[21m no bold\x1b[24m no underline"
+      "\x1b[1;4mbold underlined\x1b[21m no bold\x1b[24m no underline",
     );
 
     assert.deepEqual(chunks, [

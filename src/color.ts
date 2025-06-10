@@ -108,7 +108,7 @@ function color256ToRgb({
  */
 export function getColorHexCode(
   color: Color,
-  palette: Palette16 = PALETTE_16
+  palette: Palette16 = PALETTE_16,
 ): string {
   let rgb: [number, number, number];
 

@@ -121,26 +121,31 @@ function findNextSemicolon(str: string, start: number): number {
 }
 
 // Parse integer from string range without slicing
-function parseIntFromRange(str: string, start: number, end: number): number | null {
+function parseIntFromRange(
+  str: string,
+  start: number,
+  end: number,
+): number | null {
   if (start >= end) return null;
-  
+
   let pos = start;
   let negative = false;
-  
+
   // Check for negative sign
-  if (str.charCodeAt(pos) === 45) { // 45 = '-'
+  if (str.charCodeAt(pos) === 45) {
+    // 45 = '-'
     negative = true;
     pos++;
     if (pos >= end) return null; // Just a minus sign
   }
-  
+
   let result = 0;
   for (let i = pos; i < end; i++) {
     const digit = str.charCodeAt(i) - 48; // 48 = '0'
     if (digit < 0 || digit > 9) return null;
     result = result * 10 + digit;
   }
-  
+
   return negative ? -result : result;
 }
 
@@ -186,56 +191,58 @@ export function createTokenizer(): Tokenizer {
       params: string,
       segmentStart: number,
       segmentEnd: number,
-      tokens: Token[]
+      tokens: Token[],
     ) {
       // For codes that need to look ahead (38, 48), we need special handling
       if (code === 38 || code === 48) {
         let pos = segmentEnd + 1; // Skip semicolon after 38/48
-        
+
         // Parse mode (2 or 5)
         const modeEnd = findNextSemicolon(params, pos);
         const mode = parseIntFromRange(params, pos, modeEnd);
-        
+
         if (mode === 5) {
           // 256-color: parse one more number
           pos = modeEnd + 1;
           const colorEnd = findNextSemicolon(params, pos);
           const colorCode = parseIntFromRange(params, pos, colorEnd);
-          
+
           tokens.push({
             type: code === 38 ? "set-fg-color" : "set-bg-color",
-            color: { type: "256", code: colorCode }
+            color: { type: "256", code: colorCode },
           });
-          
+
           // Update loop position
           i = colorEnd - 1;
           start = colorEnd + 1;
-          
         } else if (mode === 2) {
           // RGB: parse three more numbers
           const rgbValues: (number | null)[] = [];
           pos = modeEnd + 1;
-          
+
           for (let j = 0; j < 3; j++) {
             const valueEnd = findNextSemicolon(params, pos);
             rgbValues.push(parseIntFromRange(params, pos, valueEnd));
             pos = valueEnd + 1;
           }
-          
-          if (rgbValues.every(v => v !== null)) {
+
+          if (rgbValues.every((v) => v !== null)) {
             tokens.push({
               type: code === 38 ? "set-fg-color" : "set-bg-color",
-              color: { type: "rgb", rgb: rgbValues as [number, number, number] }
+              color: {
+                type: "rgb",
+                rgb: rgbValues as [number, number, number],
+              },
             });
           } else {
             // Invalid RGB - emit as unknown with limit
             const endPos = Math.min(segmentStart + 20, params.length);
             tokens.push({
               type: "unknown",
-              sequence: `\x1b[${params.slice(segmentStart, endPos)}m`
+              sequence: `\x1b[${params.slice(segmentStart, endPos)}m`,
             });
           }
-          
+
           // Update loop position
           i = pos - 2; // -2 because we're past the last semicolon
           start = pos - 1;
@@ -244,7 +251,7 @@ export function createTokenizer(): Tokenizer {
           const endPos = modeEnd > segmentEnd ? modeEnd : segmentEnd;
           tokens.push({
             type: "unknown",
-            sequence: `\x1b[${params.slice(segmentStart, endPos)}m`
+            sequence: `\x1b[${params.slice(segmentStart, endPos)}m`,
           });
           i = endPos - 1;
           start = endPos + 1;

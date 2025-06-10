@@ -7,7 +7,7 @@ describe("Tokenizer malformed parameter handling", () => {
   test("should handle RGB sequences with non-numeric values", () => {
     const tokenizer = createTokenizer();
     const tokens = tokenizer.push(
-      "\x1b[38;2;red;green;blue;extra;params;that;go;on;forever;and;ever;and;evermare text"
+      "\x1b[38;2;red;green;blue;extra;params;that;go;on;forever;and;ever;and;evermare text",
     );
 
     // Tokenizer stops parsing at the first non-numeric character
@@ -44,16 +44,25 @@ describe("Tokenizer malformed parameter handling", () => {
   test("should accept very large numbers as valid RGB values", () => {
     const tokenizer = createTokenizer();
     const tokens = tokenizer.push(
-      "\x1b[38;2;999999999999999999999;100;200mtext"
+      "\x1b[38;2;999999999999999999999;100;200mtext",
     );
 
     // Get the actual parsed large number to use in assertion
-    const actualTokens = tokens as [{ type: "set-fg-color"; color: { type: "rgb"; rgb: [number, number, number] } }, { type: "text"; text: string }];
+    const actualTokens = tokens as [
+      {
+        type: "set-fg-color";
+        color: { type: "rgb"; rgb: [number, number, number] };
+      },
+      { type: "text"; text: string },
+    ];
     const largeNumber = actualTokens[0].color.rgb[0];
-    
+
     assert.deepEqual(tokens, [
-      { type: "set-fg-color", color: { type: "rgb", rgb: [largeNumber, 100, 200] } },
-      { type: "text", text: "text" }
+      {
+        type: "set-fg-color",
+        color: { type: "rgb", rgb: [largeNumber, 100, 200] },
+      },
+      { type: "text", text: "text" },
     ]);
   });
 
@@ -113,7 +122,7 @@ describe("Tokenizer malformed parameter handling", () => {
     const tokenizer = createTokenizer();
     // Test handling of sequences with many consecutive semicolons
     const tokens = tokenizer.push(
-      "\x1b[38;2;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;mtext"
+      "\x1b[38;2;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;mtext",
     );
 
     // With many empty parameters, the sequence is marked as unknown including the 'm'

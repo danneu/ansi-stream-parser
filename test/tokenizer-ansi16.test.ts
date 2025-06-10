@@ -13,7 +13,7 @@ describe("ANSI 16 Colors", () => {
         "\x1b[34mBlue\x1b[0m " +
         "\x1b[35mMagenta\x1b[0m " +
         "\x1b[36mCyan\x1b[0m " +
-        "\x1b[37mWhite\x1b[0m"
+        "\x1b[37mWhite\x1b[0m",
     );
 
     assert.deepEqual(tokens, [
@@ -61,7 +61,7 @@ describe("ANSI 16 Colors", () => {
         "\x1b[94mBright Blue\x1b[0m " +
         "\x1b[95mBright Magenta\x1b[0m " +
         "\x1b[96mBright Cyan\x1b[0m " +
-        "\x1b[97mBright White\x1b[0m"
+        "\x1b[97mBright White\x1b[0m",
     );
 
     assert.deepEqual(tokens, [
@@ -109,7 +109,7 @@ describe("ANSI 16 Colors", () => {
         "\x1b[44mBlue BG\x1b[0m " +
         "\x1b[45mMagenta BG\x1b[0m " +
         "\x1b[46mCyan BG\x1b[0m " +
-        "\x1b[47mWhite BG\x1b[0m"
+        "\x1b[47mWhite BG\x1b[0m",
     );
 
     assert.deepEqual(tokens, [
@@ -157,7 +157,7 @@ describe("ANSI 16 Colors", () => {
         "\x1b[104mBright Blue BG\x1b[0m " +
         "\x1b[105mBright Magenta BG\x1b[0m " +
         "\x1b[106mBright Cyan BG\x1b[0m " +
-        "\x1b[107mBright White BG\x1b[0m"
+        "\x1b[107mBright White BG\x1b[0m",
     );
 
     assert.deepEqual(tokens, [
@@ -199,7 +199,7 @@ describe("ANSI 16 Colors", () => {
     const tokenizer = createTokenizer();
     const tokens = tokenizer.push(
       "\x1b[31;47mRed on White\x1b[0m " +
-        "\x1b[93;44mBright Yellow on Blue\x1b[0m"
+        "\x1b[93;44mBright Yellow on Blue\x1b[0m",
     );
 
     assert.deepEqual(tokens, [
@@ -218,7 +218,7 @@ describe("ANSI 16 Colors", () => {
   test("should handle colors mixed with text attributes", () => {
     const tokenizer = createTokenizer();
     const tokens = tokenizer.push(
-      "\x1b[1;31mBold Red\x1b[0m " + "\x1b[4;94mUnderlined Bright Blue\x1b[0m"
+      "\x1b[1;31mBold Red\x1b[0m " + "\x1b[4;94mUnderlined Bright Blue\x1b[0m",
     );
 
     assert.deepEqual(tokens, [

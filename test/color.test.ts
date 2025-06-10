@@ -57,23 +57,23 @@ describe("Color helpers", () => {
       assert.equal(getColorHexCode({ type: "rgb", rgb: [0, 0, 0] }), "#000000");
       assert.equal(
         getColorHexCode({ type: "rgb", rgb: [255, 0, 0] }),
-        "#ff0000"
+        "#ff0000",
       );
       assert.equal(
         getColorHexCode({ type: "rgb", rgb: [0, 255, 0] }),
-        "#00ff00"
+        "#00ff00",
       );
       assert.equal(
         getColorHexCode({ type: "rgb", rgb: [0, 0, 255] }),
-        "#0000ff"
+        "#0000ff",
       );
       assert.equal(
         getColorHexCode({ type: "rgb", rgb: [255, 255, 255] }),
-        "#ffffff"
+        "#ffffff",
       );
       assert.equal(
         getColorHexCode({ type: "rgb", rgb: [170, 85, 42] }),
-        "#aa552a"
+        "#aa552a",
       );
     });
 
@@ -99,15 +99,15 @@ describe("Color helpers", () => {
 
       assert.equal(
         getColorHexCode({ type: "16", code: 1 }, customPalette),
-        "#ff0000"
+        "#ff0000",
       );
       assert.equal(
         getColorHexCode({ type: "16", code: 2 }, customPalette),
-        "#00ff00"
+        "#00ff00",
       );
       assert.equal(
         getColorHexCode({ type: "16", code: 8 }, customPalette),
-        "#808080"
+        "#808080",
       );
     });
 
@@ -134,13 +134,13 @@ describe("Color helpers", () => {
       // 256-color should ignore custom palette
       assert.equal(
         getColorHexCode({ type: "256", code: 1 }, customPalette),
-        "#aa0000" // Default red, not custom green
+        "#aa0000", // Default red, not custom green
       );
 
       // RGB should ignore custom palette
       assert.equal(
         getColorHexCode({ type: "rgb", rgb: [170, 0, 0] }, customPalette),
-        "#aa0000"
+        "#aa0000",
       );
     });
   });

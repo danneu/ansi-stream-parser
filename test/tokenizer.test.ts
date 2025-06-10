@@ -572,7 +572,7 @@ describe("ANSI Stream Tokenizer", () => {
       // Expected output:
       assert.deepEqual(tokens, [
         { type: "set-fg-color", color: { type: "rgb", rgb: [255, 0, 0] } },
-        { type: "bold", enable: true }
+        { type: "bold", enable: true },
       ]);
     });
 
@@ -581,11 +581,11 @@ describe("ANSI Stream Tokenizer", () => {
 
       // Multiple colors in sequence
       const tokens = tokenizer.push("\x1b[38;5;196;48;5;21m");
-      
+
       // Should parse both foreground (196) and background (21) colors
       assert.deepEqual(tokens, [
         { type: "set-fg-color", color: { type: "256", code: 196 } },
-        { type: "set-bg-color", color: { type: "256", code: 21 } }
+        { type: "set-bg-color", color: { type: "256", code: 21 } },
       ]);
     });
 
@@ -594,12 +594,12 @@ describe("ANSI Stream Tokenizer", () => {
 
       // 256-color followed by style
       const tokens = tokenizer.push("\x1b[38;5;196;1;3m");
-      
+
       // Should set color 196, then bold, then italic
       assert.deepEqual(tokens, [
         { type: "set-fg-color", color: { type: "256", code: 196 } },
         { type: "bold", enable: true },
-        { type: "italic", enable: true }
+        { type: "italic", enable: true },
       ]);
     });
 
@@ -608,12 +608,12 @@ describe("ANSI Stream Tokenizer", () => {
 
       // RGB with trailing styles
       const tokens = tokenizer.push("\x1b[38;2;255;128;0;48;2;0;0;255;4m");
-      
+
       // Should set orange foreground, blue background, and underline
       assert.deepEqual(tokens, [
         { type: "set-fg-color", color: { type: "rgb", rgb: [255, 128, 0] } },
         { type: "set-bg-color", color: { type: "rgb", rgb: [0, 0, 255] } },
-        { type: "underline", enable: true }
+        { type: "underline", enable: true },
       ]);
     });
   });

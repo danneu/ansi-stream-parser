@@ -8,7 +8,7 @@ describe("ANSI 256 Colors", () => {
     const tokens = tokenizer.push(
       "\x1b[38;5;0mColor 0\x1b[0m " +
         "\x1b[38;5;128mColor 128\x1b[0m " +
-        "\x1b[38;5;255mColor 255\x1b[0m"
+        "\x1b[38;5;255mColor 255\x1b[0m",
     );
 
     assert.deepEqual(tokens, [
@@ -31,7 +31,7 @@ describe("ANSI 256 Colors", () => {
     const tokens = tokenizer.push(
       "\x1b[48;5;0mBG 0\x1b[0m " +
         "\x1b[48;5;128mBG 128\x1b[0m " +
-        "\x1b[48;5;255mBG 255\x1b[0m"
+        "\x1b[48;5;255mBG 255\x1b[0m",
     );
 
     assert.deepEqual(tokens, [
@@ -57,7 +57,7 @@ describe("ANSI 256 Colors", () => {
         "\x1b[38;5;15m16th\x1b[0m " + // Last of 16-color range
         "\x1b[38;5;16m17th\x1b[0m " + // First extended color
         "\x1b[38;5;231mLast RGB\x1b[0m " + // Last of 216 RGB colors
-        "\x1b[38;5;232mFirst Gray\x1b[0m" // First grayscale
+        "\x1b[38;5;232mFirst Gray\x1b[0m", // First grayscale
     );
 
     assert.deepEqual(tokens, [
@@ -147,7 +147,7 @@ describe("ANSI 256 Colors", () => {
   test("should handle single digit color codes", () => {
     const tokenizer = createTokenizer();
     const tokens = tokenizer.push(
-      "\x1b[38;5;0mZero\x1b[0m " + "\x1b[38;5;9mNine\x1b[0m"
+      "\x1b[38;5;0mZero\x1b[0m " + "\x1b[38;5;9mNine\x1b[0m",
     );
 
     assert.deepEqual(tokens, [
@@ -164,7 +164,7 @@ describe("ANSI 256 Colors", () => {
   test("should handle 256 colors mixed with other SGR codes", () => {
     const tokenizer = createTokenizer();
     const tokens = tokenizer.push(
-      "\x1b[1;38;5;196;4mBold Red Underline\x1b[0m"
+      "\x1b[1;38;5;196;4mBold Red Underline\x1b[0m",
     );
 
     assert.deepEqual(tokens, [
@@ -179,7 +179,7 @@ describe("ANSI 256 Colors", () => {
   test("should handle combined 256 foreground and background", () => {
     const tokenizer = createTokenizer();
     const tokens = tokenizer.push(
-      "\x1b[38;5;226;48;5;21mYellow on Blue\x1b[0m"
+      "\x1b[38;5;226;48;5;21mYellow on Blue\x1b[0m",
     );
 
     assert.deepEqual(tokens, [
@@ -226,7 +226,7 @@ describe("ANSI 256 Colors", () => {
     const tokens = tokenizer.push(
       "\x1b[38;5;001mOne\x1b[0m " +
         "\x1b[38;5;099mNinety-nine\x1b[0m " +
-        "\x1b[38;5;000mZero\x1b[0m"
+        "\x1b[38;5;000mZero\x1b[0m",
     );
 
     assert.deepEqual(tokens, [
@@ -247,7 +247,7 @@ describe("ANSI 256 Colors", () => {
   test("should handle rapid 256 color changes", () => {
     const tokenizer = createTokenizer();
     const tokens = tokenizer.push(
-      "\x1b[38;5;1m1\x1b[38;5;2m2\x1b[38;5;3m3\x1b[38;5;4m4"
+      "\x1b[38;5;1m1\x1b[38;5;2m2\x1b[38;5;3m3\x1b[38;5;4m4",
     );
 
     assert.deepEqual(tokens, [
