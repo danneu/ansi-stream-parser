@@ -108,3 +108,61 @@ const customPalette = [
 
 const customHex = getColorHexCode({ type: "16", code: 1 }, customPalette); // "#ff0000"
 ```
+
+## ANSI to HTML
+
+Convert ANSI escape sequences to HTML spans with proper escaping.
+
+Like the parser and tokenizer, this is a streaming transformer that processes input incrementally.
+
+- Decorations (`bold`, `italic`, etc.) are converted to classes: `.ansi-bold`, `.ansi-italic`, etc.
+- Foreground and background colors are converted to inline `color` and `background-color` styles with hex color codes.
+
+```ts
+import { createAnsiToHtmlTransformer } from "ansi-stream-parser";
+
+const transformer = createAnsiToHtmlTransformer();
+
+const html1 = transformer.push("\x1b[32mHello ");
+const html2 = transformer.push("World\x1b[0m \x1b[1;31mBold");
+const html3 = transformer.push(" Text\x1b[0m!");
+
+assert.deepEqual(
+  [...html1, ...html2, ...html3],
+  [
+    '<span style="color: #00aa00">Hello World</span>',
+    "<span> </span>",
+    '<span class="ansi-bold" style="color: #aa0000">Bold Text</span>',
+    "<span>!</span>",
+  ],
+);
+```
+
+```css
+/* Example CSS to handle the default html decorations */
+
+.ansi-bold {
+  font-weight: bold;
+}
+.ansi-dim {
+  opacity: 0.75;
+}
+.ansi-italic {
+  font-style: italic;
+}
+.ansi-underline {
+  text-decoration: underline;
+}
+.ansi-strikethrough {
+  text-decoration: line-through;
+}
+.ansi-underline.ansi-strikethrough {
+  text-decoration: underline line-through;
+}
+
+/* Probably nothing to do for these */
+.ansi-hidden,
+.ansi-reverse,
+.ansi-blink {
+}
+```
