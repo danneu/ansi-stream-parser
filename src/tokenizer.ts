@@ -111,6 +111,39 @@ const isTerminatorCode = (charCode: number): boolean => {
   return charCode >= CHAR_CODES.AT && charCode <= CHAR_CODES.TILDE;
 };
 
+// Find next semicolon or end of string
+function findNextSemicolon(str: string, start: number): number {
+  let pos = start;
+  while (pos < str.length && str.charCodeAt(pos) !== CHAR_CODES.SEMICOLON) {
+    pos++;
+  }
+  return pos;
+}
+
+// Parse integer from string range without slicing
+function parseIntFromRange(str: string, start: number, end: number): number | null {
+  if (start >= end) return null;
+  
+  let pos = start;
+  let negative = false;
+  
+  // Check for negative sign
+  if (str.charCodeAt(pos) === 45) { // 45 = '-'
+    negative = true;
+    pos++;
+    if (pos >= end) return null; // Just a minus sign
+  }
+  
+  let result = 0;
+  for (let i = pos; i < end; i++) {
+    const digit = str.charCodeAt(i) - 48; // 48 = '0'
+    if (digit < 0 || digit > 9) return null;
+    result = result * 10 + digit;
+  }
+  
+  return negative ? -result : result;
+}
+
 export function createTokenizer(): Tokenizer {
   let buffer = "";
 
@@ -134,8 +167,7 @@ export function createTokenizer(): Tokenizer {
         i === params.length ||
         params.charCodeAt(i) === CHAR_CODES.SEMICOLON
       ) {
-        const segment = params.slice(start, i);
-        const code = segment === "" ? null : parseInt(segment, 10);
+        const code = parseIntFromRange(params, start, i);
 
         if (code !== null && !isNaN(code)) {
           // Process the code based on its value
@@ -158,84 +190,61 @@ export function createTokenizer(): Tokenizer {
     ) {
       // For codes that need to look ahead (38, 48), we need special handling
       if (code === 38 || code === 48) {
-        // Parse the next parameters manually
-        let pos = segmentEnd + 1; // Skip the semicolon
-
-        // Get next parameter (mode: 2 or 5)
-        const modeStart = pos;
-        while (
-          pos < params.length &&
-          params.charCodeAt(pos) !== CHAR_CODES.SEMICOLON
-        )
-          pos++;
-        const modeStr = params.slice(modeStart, pos);
-        const mode = modeStr === "" ? null : parseInt(modeStr, 10);
-
+        let pos = segmentEnd + 1; // Skip semicolon after 38/48
+        
+        // Parse mode (2 or 5)
+        const modeEnd = findNextSemicolon(params, pos);
+        const mode = parseIntFromRange(params, pos, modeEnd);
+        
         if (mode === 5) {
-          // 256-color mode
-          pos++; // Skip semicolon
-          const colorStart = pos;
-          while (
-            pos < params.length &&
-            params.charCodeAt(pos) !== CHAR_CODES.SEMICOLON
-          )
-            pos++;
-          const colorStr = params.slice(colorStart, pos);
-          const colorCode = colorStr === "" ? null : parseInt(colorStr, 10);
-
+          // 256-color: parse one more number
+          pos = modeEnd + 1;
+          const colorEnd = findNextSemicolon(params, pos);
+          const colorCode = parseIntFromRange(params, pos, colorEnd);
+          
           tokens.push({
             type: code === 38 ? "set-fg-color" : "set-bg-color",
-            color: { type: "256", code: isNaN(colorCode!) ? null : colorCode },
+            color: { type: "256", code: colorCode }
           });
-
-          // Skip the processed parameters
-          i = pos - 1; // -1 because the outer loop will increment
-          start = pos + 1;
+          
+          // Update loop position
+          i = colorEnd - 1;
+          start = colorEnd + 1;
+          
         } else if (mode === 2) {
-          // RGB mode - need exactly 3 more values
+          // RGB: parse three more numbers
           const rgbValues: (number | null)[] = [];
-
+          pos = modeEnd + 1;
+          
           for (let j = 0; j < 3; j++) {
-            pos++; // Skip semicolon
-            const valueStart = pos;
-            while (
-              pos < params.length &&
-              params.charCodeAt(pos) !== CHAR_CODES.SEMICOLON
-            )
-              pos++;
-            const valueStr = params.slice(valueStart, pos);
-            const value = valueStr === "" ? null : parseInt(valueStr, 10);
-            rgbValues.push(value);
+            const valueEnd = findNextSemicolon(params, pos);
+            rgbValues.push(parseIntFromRange(params, pos, valueEnd));
+            pos = valueEnd + 1;
           }
-
-          // Check if all RGB values are valid
-          if (rgbValues.every((v) => v !== null && !isNaN(v))) {
+          
+          if (rgbValues.every(v => v !== null)) {
             tokens.push({
               type: code === 38 ? "set-fg-color" : "set-bg-color",
-              color: {
-                type: "rgb",
-                rgb: rgbValues as [number, number, number],
-              },
+              color: { type: "rgb", rgb: rgbValues as [number, number, number] }
             });
-            i = pos - 1;
-            start = pos + 1;
           } else {
-            // Invalid RGB - emit as unknown
-            const endPos = Math.min(segmentStart + 20, params.length); // Reasonable limit
+            // Invalid RGB - emit as unknown with limit
+            const endPos = Math.min(segmentStart + 20, params.length);
             tokens.push({
               type: "unknown",
-              sequence: `\x1b[${params.slice(segmentStart, endPos)}m`,
+              sequence: `\x1b[${params.slice(segmentStart, endPos)}m`
             });
-            i = endPos - 1;
-            start = endPos + 1;
           }
+          
+          // Update loop position
+          i = pos - 2; // -2 because we're past the last semicolon
+          start = pos - 1;
         } else {
           // Invalid mode or missing mode
-          const endPos =
-            modeStart > segmentEnd ? modeStart + modeStr.length : segmentEnd;
+          const endPos = modeEnd > segmentEnd ? modeEnd : segmentEnd;
           tokens.push({
             type: "unknown",
-            sequence: `\x1b[${params.slice(segmentStart, endPos)}m`,
+            sequence: `\x1b[${params.slice(segmentStart, endPos)}m`
           });
           i = endPos - 1;
           start = endPos + 1;

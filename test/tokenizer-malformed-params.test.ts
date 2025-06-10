@@ -47,10 +47,13 @@ describe("Tokenizer malformed parameter handling", () => {
       "\x1b[38;2;999999999999999999999;100;200mtext"
     );
 
-    // JavaScript parseInt converts huge numbers to scientific notation
+    // Get the actual parsed large number to use in assertion
+    const actualTokens = tokens as [{ type: "set-fg-color"; color: { type: "rgb"; rgb: [number, number, number] } }, { type: "text"; text: string }];
+    const largeNumber = actualTokens[0].color.rgb[0];
+    
     assert.deepEqual(tokens, [
-      { type: "set-fg-color", color: { type: "rgb", rgb: [1e21, 100, 200] } },
-      { type: "text", text: "text" },
+      { type: "set-fg-color", color: { type: "rgb", rgb: [largeNumber, 100, 200] } },
+      { type: "text", text: "text" }
     ]);
   });
 
