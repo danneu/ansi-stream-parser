@@ -126,6 +126,9 @@ const CHAR_CODES = {
   AT: 0x40, // 64  - '@'
   TILDE: 0x7e, // 126 - '~'
   LOWER_M: 0x6d, // 109 - 'm'
+  MINUS: 0x2d, // 45 - '-'
+  DIGIT_0: 0x30, // 48 - '0'
+  DIGIT_9: 0x39, // 57 - '9'
 } as const;
 
 export type Tokenizer = {
@@ -135,6 +138,16 @@ export type Tokenizer = {
 
 const isTerminatorCode = (charCode: number): boolean => {
   return charCode >= CHAR_CODES.AT && charCode <= CHAR_CODES.TILDE;
+};
+
+const isParameterChar = (charCode: number): boolean => {
+  const isDigit =
+    charCode >= CHAR_CODES.DIGIT_0 && charCode <= CHAR_CODES.DIGIT_9;
+  return (
+    isDigit ||
+    charCode === CHAR_CODES.SEMICOLON ||
+    charCode === CHAR_CODES.MINUS
+  );
 };
 
 // Find next semicolon or end of string within bounds
@@ -361,10 +374,11 @@ export function createTokenizer(): Tokenizer {
           let j = i + 2;
           let foundTerminator = false;
           while (j < fullInput.length) {
-            const terminatorCode = fullInput.charCodeAt(j);
-            if (isTerminatorCode(terminatorCode)) {
-              // Found terminator
-              if (terminatorCode === CHAR_CODES.LOWER_M) {
+            const currentCode = fullInput.charCodeAt(j);
+
+            if (isTerminatorCode(currentCode)) {
+              // Found valid terminator
+              if (currentCode === CHAR_CODES.LOWER_M) {
                 tokens.push(...handleSGR(fullInput, i + 2, j));
               } else {
                 // Non-SGR sequence - emit as unknown
@@ -375,8 +389,19 @@ export function createTokenizer(): Tokenizer {
               i = j + 1;
               foundTerminator = true;
               break;
+            } else if (isParameterChar(currentCode)) {
+              // Valid parameter character, continue parsing
+              j++;
+            } else {
+              // Invalid character - not a parameter and not a valid terminator
+              // Treat as unknown sequence (without the invalid character)
+              const sequence = fullInput.slice(i, j);
+              tokens.push({ type: "unknown", sequence });
+
+              i = j; // Continue from the invalid character
+              foundTerminator = true;
+              break;
             }
-            j++;
           }
 
           if (!foundTerminator) {
