@@ -47,7 +47,14 @@ const b = parser.push("123m");
 
 const result = parser.push("Colored text\x1b[0m");
 // result is [ { text: 'Colored text', fg: { type: '256', code: 123 } } ]
+
+// Reset the parser
+parser.reset();
 ```
+
+Call `reset` to clear the internal state of the parser or tokenizer.
+
+Always call this before reusing the parser on new data that is not contiguous with the previous data.
 
 ## Tokenizer
 
