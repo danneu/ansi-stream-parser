@@ -95,6 +95,11 @@ function styleToStyledText(text: string, style: CurrentStyle): StyledText {
   return result;
 }
 
+/**
+ * Validate color token.
+ *
+ * Tokenizer doesn't do validation, it just emits tokens.
+ */
 function validateColor(color: RawColor): Color | null {
   switch (color.type) {
     case "16":
@@ -193,6 +198,9 @@ export function createParser(): Parser {
     return chunks;
   };
 
+  /**
+   * Reset the parser's internal state so that it can be reused.
+   */
   const reset = (): void => {
     tokenizer.reset();
     currentStyle = createStyle();

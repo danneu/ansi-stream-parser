@@ -21,7 +21,6 @@ export type Token =
   // other
   | { type: "unknown"; sequence: string };
 
-// Define handler types
 type TokenHandler = (code: number) => Token | Token[];
 
 function createSGRLookup(): Record<number, TokenHandler> {
@@ -57,7 +56,6 @@ function createSGRLookup(): Record<number, TokenHandler> {
     49: () => ({ type: "reset-bg-color" }),
   };
 
-  // Add range handlers using a loop
   // 16-color foreground (30-37)
   for (let i = 30; i <= 37; i++) {
     lookup[i] = (code) => ({
