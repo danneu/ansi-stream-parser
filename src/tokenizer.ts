@@ -147,32 +147,37 @@ function findNextSemicolon(str: string, start: number): number {
 }
 
 // Parse integer from string range without slicing
-function parseIntFromRange(
+export function parseIntFromRange(
   str: string,
   start: number,
   end: number,
 ): number | null {
-  if (start >= end) return null;
+  if (start >= end || start < 0 || start >= str.length) return null;
 
   let pos = start;
   let negative = false;
+  
+  // Clamp end to string length
+  const actualEnd = Math.min(end, str.length);
+  if (pos >= actualEnd) return null;
 
   // Check for negative sign
   if (str.charCodeAt(pos) === 45) {
     // 45 = '-'
     negative = true;
     pos++;
-    if (pos >= end) return null; // Just a minus sign
+    if (pos >= actualEnd) return null; // Just a minus sign
   }
 
   let result = 0;
-  for (let i = pos; i < end; i++) {
+  for (let i = pos; i < actualEnd; i++) {
     const digit = str.charCodeAt(i) - 48; // 48 = '0'
     if (digit < 0 || digit > 9) return null;
     result = result * 10 + digit;
   }
 
-  return negative ? -result : result;
+  // Handle -0 case to return 0
+  return negative && result !== 0 ? -result : result;
 }
 
 export function createTokenizer(): Tokenizer {
