@@ -24,7 +24,27 @@ export type Token =
 type TokenHandler = (code: number) => Token | Token[];
 
 function createSGRLookup(): Record<number, TokenHandler> {
-  const lookup: Record<number, TokenHandler> = {
+  const fg16 = (code: number): Token => ({
+    type: "set-fg-color",
+    color: { type: "16", code: code - 30 },
+  });
+
+  const bg16 = (code: number): Token => ({
+    type: "set-bg-color",
+    color: { type: "16", code: code - 40 },
+  });
+
+  const fg16b = (code: number): Token => ({
+    type: "set-fg-color",
+    color: { type: "16", code: code - 90 + 8 },
+  });
+
+  const bg16b = (code: number): Token => ({
+    type: "set-bg-color",
+    color: { type: "16", code: code - 100 + 8 },
+  });
+
+  return {
     // Resets
     0: () => ({ type: "reset-all" }),
 
@@ -51,44 +71,50 @@ function createSGRLookup(): Record<number, TokenHandler> {
     28: () => ({ type: "hidden", enable: false }),
     29: () => ({ type: "strikethrough", enable: false }),
 
+    // 16-color foreground (30-37)
+    30: fg16,
+    31: fg16,
+    32: fg16,
+    33: fg16,
+    34: fg16,
+    35: fg16,
+    36: fg16,
+    37: fg16,
+
+    // 16-color background (40-47)
+    40: bg16,
+    41: bg16,
+    42: bg16,
+    43: bg16,
+    44: bg16,
+    45: bg16,
+    46: bg16,
+    47: bg16,
+
+    // Bright 16-color foreground (90-97)
+    90: fg16b,
+    91: fg16b,
+    92: fg16b,
+    93: fg16b,
+    94: fg16b,
+    95: fg16b,
+    96: fg16b,
+    97: fg16b,
+
+    // Bright 16-color background (100-107)
+    100: bg16b,
+    101: bg16b,
+    102: bg16b,
+    103: bg16b,
+    104: bg16b,
+    105: bg16b,
+    106: bg16b,
+    107: bg16b,
+
     // Color resets
     39: () => ({ type: "reset-fg-color" }),
     49: () => ({ type: "reset-bg-color" }),
   };
-
-  // 16-color foreground (30-37)
-  for (let i = 30; i <= 37; i++) {
-    lookup[i] = (code) => ({
-      type: "set-fg-color",
-      color: { type: "16", code: code - 30 },
-    });
-  }
-
-  // 16-color background (40-47)
-  for (let i = 40; i <= 47; i++) {
-    lookup[i] = (code) => ({
-      type: "set-bg-color",
-      color: { type: "16", code: code - 40 },
-    });
-  }
-
-  // Bright 16-color foreground (90-97)
-  for (let i = 90; i <= 97; i++) {
-    lookup[i] = (code) => ({
-      type: "set-fg-color",
-      color: { type: "16", code: code - 90 + 8 },
-    });
-  }
-
-  // Bright 16-color background (100-107)
-  for (let i = 100; i <= 107; i++) {
-    lookup[i] = (code) => ({
-      type: "set-bg-color",
-      color: { type: "16", code: code - 100 + 8 },
-    });
-  }
-
-  return lookup;
 }
 
 const SGR_LOOKUP = createSGRLookup();
