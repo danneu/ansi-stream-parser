@@ -88,10 +88,9 @@ describe("Tokenizer malformed parameter handling", () => {
     const tokens = tokenizer.push("\x1b[38;999;100;200mtext");
 
     // 999 is not a valid mode (should be 2 or 5)
-    // The remaining ;100;200m gets parsed as other codes
+    // The entire sequence gets marked as unknown with no truncation
     assert.deepEqual(tokens, [
-      { type: "unknown", sequence: "\x1b[38;999m" },
-      { type: "set-bg-color", color: { type: "16", code: 8 } }, // 100 gets parsed as code 100
+      { type: "unknown", sequence: "\x1b[38;999;100;200m" },
       { type: "text", text: "text" },
     ]);
   });
@@ -125,9 +124,9 @@ describe("Tokenizer malformed parameter handling", () => {
       "\x1b[38;2;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;mtext",
     );
 
-    // With many empty parameters, the sequence is marked as unknown including the 'm'
+    // With many empty parameters, the sequence is marked as unknown with no truncation
     assert.deepEqual(tokens, [
-      { type: "unknown", sequence: "\x1b[38;2;;;;;;;;;;;;;;;;m" },
+      { type: "unknown", sequence: "\x1b[38;2;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;m" },
       { type: "text", text: "text" },
     ]);
   });

@@ -137,13 +137,32 @@ const isTerminatorCode = (charCode: number): boolean => {
   return charCode >= CHAR_CODES.AT && charCode <= CHAR_CODES.TILDE;
 };
 
-// Find next semicolon or end of string
-function findNextSemicolon(str: string, start: number): number {
+// Find next semicolon or end of string within bounds
+function findNextSemicolon(
+  str: string,
+  start: number,
+  maxEnd?: number,
+): number {
   let pos = start;
-  while (pos < str.length && str.charCodeAt(pos) !== CHAR_CODES.SEMICOLON) {
+  const end = maxEnd ?? str.length;
+  while (pos < end && str.charCodeAt(pos) !== CHAR_CODES.SEMICOLON) {
     pos++;
   }
   return pos;
+}
+
+// Build ANSI sequence without intermediate slicing
+// Includes the full sequence from \x1b[ through the end position
+function buildSequence(input: string, start: number, end: number): string {
+  const chars: string[] = ["\x1b", "["];
+  for (let i = start; i < end; i++) {
+    chars.push(input.charAt(i));
+  }
+  // Include the 'm' terminator if it exists at the end position
+  if (end < input.length && input.charAt(end) === "m") {
+    chars.push("m");
+  }
+  return chars.join("");
 }
 
 // Parse integer from string range without slicing
@@ -156,7 +175,7 @@ export function parseIntFromRange(
 
   let pos = start;
   let negative = false;
-  
+
   // Clamp end to string length
   const actualEnd = Math.min(end, str.length);
   if (pos >= actualEnd) return null;
@@ -183,31 +202,32 @@ export function parseIntFromRange(
 export function createTokenizer(): Tokenizer {
   let buffer = "";
 
-  const handleSGR = (params: string): Token[] => {
+  const handleSGR = (
+    input: string,
+    startPos: number,
+    endPos: number,
+  ): Token[] => {
     const tokens: Token[] = [];
 
     // Special case: completely empty params means reset
-    if (params === "") {
+    if (startPos === endPos) {
       tokens.push({ type: "reset-all" });
       return tokens;
     }
 
     // Parse parameters
-    let start = 0;
-    let i = 0;
+    let start = startPos;
+    let i = startPos;
 
     // Process each parameter
-    while (i <= params.length) {
+    while (i <= endPos) {
       // Found separator or end of string
-      if (
-        i === params.length ||
-        params.charCodeAt(i) === CHAR_CODES.SEMICOLON
-      ) {
-        const code = parseIntFromRange(params, start, i);
+      if (i === endPos || input.charCodeAt(i) === CHAR_CODES.SEMICOLON) {
+        const code = parseIntFromRange(input, start, i);
 
         if (code !== null && !isNaN(code)) {
           // Process the code based on its value
-          processCode(code, params, start, i, tokens);
+          processCode(code, input, start, i, tokens, startPos, endPos);
         }
 
         start = i + 1;
@@ -219,24 +239,26 @@ export function createTokenizer(): Tokenizer {
 
     function processCode(
       code: number,
-      params: string,
+      input: string,
       segmentStart: number,
       segmentEnd: number,
       tokens: Token[],
+      _paramsStart: number,
+      paramsEnd: number,
     ) {
       // For codes that need to look ahead (38, 48), we need special handling
       if (code === 38 || code === 48) {
         let pos = segmentEnd + 1; // Skip semicolon after 38/48
 
         // Parse mode (2 or 5)
-        const modeEnd = findNextSemicolon(params, pos);
-        const mode = parseIntFromRange(params, pos, modeEnd);
+        const modeEnd = findNextSemicolon(input, pos, paramsEnd);
+        const mode = parseIntFromRange(input, pos, modeEnd);
 
         if (mode === 5) {
           // 256-color: parse one more number
           pos = modeEnd + 1;
-          const colorEnd = findNextSemicolon(params, pos);
-          const colorCode = parseIntFromRange(params, pos, colorEnd);
+          const colorEnd = findNextSemicolon(input, pos, paramsEnd);
+          const colorCode = parseIntFromRange(input, pos, colorEnd);
 
           tokens.push({
             type: code === 38 ? "set-fg-color" : "set-bg-color",
@@ -252,8 +274,8 @@ export function createTokenizer(): Tokenizer {
           pos = modeEnd + 1;
 
           for (let j = 0; j < 3; j++) {
-            const valueEnd = findNextSemicolon(params, pos);
-            rgbValues.push(parseIntFromRange(params, pos, valueEnd));
+            const valueEnd = findNextSemicolon(input, pos, paramsEnd);
+            rgbValues.push(parseIntFromRange(input, pos, valueEnd));
             pos = valueEnd + 1;
           }
 
@@ -266,26 +288,27 @@ export function createTokenizer(): Tokenizer {
               },
             });
           } else {
-            // Invalid RGB - emit as unknown with limit
-            const endPos = Math.min(segmentStart + 20, params.length);
+            // Invalid RGB - emit as unknown
+            // Include any RGB values/semicolons that were present
             tokens.push({
               type: "unknown",
-              sequence: `\x1b[${params.slice(segmentStart, endPos)}m`,
+              sequence: buildSequence(input, segmentStart, paramsEnd),
             });
           }
 
-          // Update loop position
-          i = pos - 2; // -2 because we're past the last semicolon
+          // Update loop position to continue after RGB values
+          // pos is now after the 3 RGB values, so continue from there
+          i = pos - 2; // -2 because loop will increment and we want to continue at pos-1
           start = pos - 1;
         } else {
           // Invalid mode or missing mode
-          const endPos = modeEnd > segmentEnd ? modeEnd : segmentEnd;
           tokens.push({
             type: "unknown",
-            sequence: `\x1b[${params.slice(segmentStart, endPos)}m`,
+            sequence: buildSequence(input, segmentStart, paramsEnd),
           });
-          i = endPos - 1;
-          start = endPos + 1;
+          // Skip to the end since we consumed all params
+          i = paramsEnd;
+          start = paramsEnd + 1;
         }
 
         return;
@@ -345,10 +368,8 @@ export function createTokenizer(): Tokenizer {
             const terminatorCode = fullInput.charCodeAt(j);
             if (isTerminatorCode(terminatorCode)) {
               // Found terminator
-              const params = fullInput.slice(i + 2, j);
-
               if (terminatorCode === CHAR_CODES.LOWER_M) {
-                tokens.push(...handleSGR(params));
+                tokens.push(...handleSGR(fullInput, i + 2, j));
               } else {
                 // Non-SGR sequence - emit as unknown
                 const sequence = fullInput.slice(i, j + 1);
