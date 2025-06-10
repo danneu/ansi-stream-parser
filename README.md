@@ -1,4 +1,4 @@
-# ansi-stream-parser
+# ansi-stream-parser [![NPM Version](https://img.shields.io/npm/v/ansi-stream-parser)](https://www.npmjs.com/package/ansi-stream-parser)
 
 A parser for ANSI escape sequence text (SGR) that works on streaming/partial input.
 
