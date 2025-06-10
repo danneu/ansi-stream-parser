@@ -152,15 +152,11 @@ function findNextSemicolon(
 }
 
 // Build ANSI sequence without intermediate slicing
-// Includes the full sequence from \x1b[ through the end position
+// Includes the full sequence from \x1b[ through the end position (exclusive)
 function buildSequence(input: string, start: number, end: number): string {
   const chars: string[] = ["\x1b", "["];
   for (let i = start; i < end; i++) {
     chars.push(input.charAt(i));
-  }
-  // Include the 'm' terminator if it exists at the end position
-  if (end < input.length && input.charAt(end) === "m") {
-    chars.push("m");
   }
   return chars.join("");
 }
@@ -292,7 +288,7 @@ export function createTokenizer(): Tokenizer {
             // Include any RGB values/semicolons that were present
             tokens.push({
               type: "unknown",
-              sequence: buildSequence(input, segmentStart, paramsEnd),
+              sequence: buildSequence(input, segmentStart, paramsEnd + 1),
             });
           }
 
@@ -304,7 +300,7 @@ export function createTokenizer(): Tokenizer {
           // Invalid mode or missing mode
           tokens.push({
             type: "unknown",
-            sequence: buildSequence(input, segmentStart, paramsEnd),
+            sequence: buildSequence(input, segmentStart, paramsEnd + 1),
           });
           // Skip to the end since we consumed all params
           i = paramsEnd;
